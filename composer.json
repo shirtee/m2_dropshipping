@@ -1,5 +1,5 @@
 {
-    "name": "shirtee/dropshipping",
+    "name": "shirtee/m2_dropshipping",
     "description": "N/A",
     "type": "magento2-module",
     "autoload": {
