@@ -1,0 +1,14 @@
+{
+    "name": "shirtee/dropshipping",
+    "description": "N/A",
+    "type": "magento2-module",
+    "autoload": {
+        "files": [
+            "registration.php"
+        ],
+        "psr-4": {
+            "Shirtee\\Dropshipping\\": ""
+        }
+    },
+    "version": "1.0.0"
+}

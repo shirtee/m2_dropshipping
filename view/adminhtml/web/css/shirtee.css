@@ -1,0 +1,62 @@
+/**
+ * Copyright © Shirtee. All rights reserved.
+ */
+
+.admin__menu #menu-shirtee-dropshipping-shirtee > a:before  {
+    opacity: 0.5;
+    content: '';
+    font-size: 2.4rem;
+    display: block;
+    position: relative;
+    top: -0.3rem;
+    width: 28px;
+    height: 23px;
+    background: url(../images/logo_menu.png);
+    background-size: 28px 23px;
+    margin: 0 auto;
+}
+.admin__menu .item-shirtee > a span {
+    color: #ffffff;
+    font-weight: normal;
+    font-size: 18px;
+    opacity: 0.5;
+}
+.admin__menu #menu-shirtee-dropshipping-shirtee:hover > a:before, .admin__menu .item-shirtee > a span:hover, .admin__menu #menu-shirtee-dropshipping-shirtee > a._active:before, .admin__menu .item-shirtee > a._active span {
+	opacity: 1;
+}
+.shirtee-logo {
+    background: url(../images/logo_menu.png) no-repeat left center;
+    padding-left: 28px;
+    background-size: 19px;
+}
+.progress_area {
+    width: 100%;
+    float: left;
+    clear: both;
+    text-align: center;
+    padding-bottom: 35px;
+    border-bottom: 1px solid #e3e3e3;
+    margin-bottom: 35px;
+}
+.progress {
+    display: flex;
+    height: 2rem;
+    overflow: hidden;
+    font-size: 1.75rem;
+    background-color: #e9ecef;
+    border-radius: .25rem;
+}
+.progress-bar {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    color: #fff;
+    text-align: center;
+    background-color: #007bff;
+}
+.progress_msg {
+    padding-bottom: 5px;
+}
+.process_img {
+    text-align: center;
+}

@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Shirtee. All rights reserved.
+ */
+-->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <update handle="formkey"/>
+    <update handle="shirtee_dropshipping_products_block"/>
+    <referenceContainer name="page.main.actions">
+        <block class="Magento\Backend\Block\Store\Switcher" template="Shirtee_Dropshipping::store/switcher.phtml" name="store.switcher">
+            <action method="setUseConfirm">
+                <argument name="params" xsi:type="string">0</argument>
+            </action>
+            <arguments>
+                <argument name="switch_websites" xsi:type="string">1</argument>
+                <argument name="switch_store_groups" xsi:type="string">0</argument>
+                <argument name="switch_store_views" xsi:type="string">0</argument>
+                <argument name="default_selection_name" xsi:type="string" translate="true">All Websites</argument>
+            </arguments>
+        </block>
+    </referenceContainer>
+	<referenceContainer name="content">
+		<block class="Shirtee\Dropshipping\Block\Adminhtml\Product\Header" name="shirtee.product.header" template="Shirtee_Dropshipping::product/header.phtml" before="-" />
+		<block class="Shirtee\Dropshipping\Block\Adminhtml\Product" name="adminhtml.shirtee.product.grid.container"/>
+	</referenceContainer>
+</page>

@@ -1,0 +1,91 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Shirtee. All rights reserved.
+ */
+-->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+	<referenceContainer name="content">
+		<referenceBlock name="adminhtml.shirtee.order.grid.container">
+			<block class="Magento\Backend\Block\Widget\Grid" name="adminhtml.shirtee.order.grid" as="grid">
+                <arguments>
+                    <argument name="id" xsi:type="string">orderGrid</argument>
+                    <argument name="dataSource" xsi:type="object" shared="false">Shirtee\Dropshipping\Model\ResourceModel\Order\Collection</argument>
+                    <argument name="default_dir" xsi:type="string">DESC</argument>
+                    <argument name="default_sort" xsi:type="string">oid</argument>
+                    <argument name="save_parameters_in_session" xsi:type="string">1</argument>
+                    <argument name="use_ajax" xsi:type="string">1</argument>
+                    <argument name="grid_url" xsi:type="url" path="*/*/grid">
+                        <param name="_current">1</param>
+                    </argument>
+                </arguments>
+                <block class="Magento\Backend\Block\Widget\Grid\Export" name="adminhtml.shirtee.order.grid.export" as="grid.export">
+                    <arguments>
+                        <argument name="exportTypes" xsi:type="array">
+                            <item name="csv" xsi:type="array">
+                                <item name="urlPath" xsi:type="string">*/*/exportCsv</item>
+                                <item name="label" xsi:type="string" translate="true">CSV</item>
+                            </item>
+                        </argument>
+                    </arguments>
+                </block>
+                <block class="Magento\Backend\Block\Widget\Grid\ColumnSet" name="adminhtml.shirtee.order.grid.columnSet" as="grid.columnSet">
+                    <block class="Magento\Backend\Block\Widget\Grid\Column" name="adminhtml.shirtee.order.grid.columnSet.website_id" as="website_id">
+                        <arguments>
+                            <argument name="header" xsi:type="string" translate="true">Website</argument>
+                            <argument name="index" xsi:type="string">website_id</argument>
+                            <argument name="type" xsi:type="string">options</argument>
+                            <argument name="options" xsi:type="options" model="Magento\Config\Model\Config\Source\Website\OptionHash"/>
+                        </arguments>
+                    </block>
+                    <block class="Magento\Backend\Block\Widget\Grid\Column" name="adminhtml.shirtee.order.grid.columnSet.magento_oid" as="magento_oid">
+                        <arguments>
+                            <argument name="header" xsi:type="string" translate="true">Order ID</argument>
+                            <argument name="index" xsi:type="string">magento_oid</argument>
+                        </arguments>
+                    </block>
+                    <block class="Magento\Backend\Block\Widget\Grid\Column" name="adminhtml.shirtee.order.grid.columnSet.order_date" as="order_date">
+                        <arguments>
+                            <argument name="header" xsi:type="string" translate="true">Date</argument>
+                            <argument name="index" xsi:type="string">order_date</argument>
+                        </arguments>
+                    </block>
+                    <block class="Magento\Backend\Block\Widget\Grid\Column" name="adminhtml.shirtee.order.grid.columnSet.order_email" as="order_email">
+                        <arguments>
+                            <argument name="header" xsi:type="string" translate="true">Email</argument>
+                            <argument name="index" xsi:type="string">order_email</argument>
+                        </arguments>
+                    </block>
+                    <block class="Magento\Backend\Block\Widget\Grid\Column" name="adminhtml.shirtee.order.grid.columnSet.order_total" as="order_total">
+                        <arguments>
+                            <argument name="header" xsi:type="string" translate="true">Total</argument>
+                            <argument name="index" xsi:type="string">order_total</argument>
+                            <argument name="renderer" xsi:type="string">Shirtee\Dropshipping\Block\Adminhtml\Order\Grid\Renderer\Total</argument>
+                        </arguments>
+                    </block>
+                    <block class="Magento\Backend\Block\Widget\Grid\Column" name="adminhtml.shirtee.order.grid.columnSet.order_status" as="order_status">
+                        <arguments>
+                            <argument name="header" xsi:type="string" translate="true">Status</argument>
+                            <argument name="index" xsi:type="string">order_status</argument>
+                        </arguments>
+                    </block>
+                    <block class="Magento\Backend\Block\Widget\Grid\Column" name="adminhtml.shirtee.order.grid.columnSet.tracking_company" as="tracking_company">
+                        <arguments>
+                            <argument name="header" xsi:type="string" translate="true">Tracking</argument>
+                            <argument name="index" xsi:type="string">tracking_company</argument>
+                            <argument name="default" xsi:type="string">-</argument>
+                            <argument name="renderer" xsi:type="string">Shirtee\Dropshipping\Block\Adminhtml\Order\Grid\Renderer\Tracking</argument>
+                        </arguments>
+                    </block>
+                    <block class="Magento\Backend\Block\Widget\Grid\Column" name="adminhtml.shirtee.order.grid.columnSet.shirtee_oid" as="shirtee_oid">
+                        <arguments>
+                            <argument name="header" xsi:type="string" translate="true">Shirtee-ID</argument>
+                            <argument name="index" xsi:type="string">shirtee_oid</argument>
+                            <argument name="default" xsi:type="string">-</argument>
+                        </arguments>
+                    </block>
+                </block>
+            </block>
+		</referenceBlock>	
+	</referenceContainer>
+</page>

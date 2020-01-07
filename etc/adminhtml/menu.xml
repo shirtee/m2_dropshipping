@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Shirtee. All rights reserved.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Backend:etc/menu.xsd">
+    <menu>
+        <add id="Shirtee_Dropshipping::shirtee" title="Shirtee" module="Shirtee_Dropshipping" sortOrder="99" resource="Shirtee_Dropshipping::shirtee"/>
+        <add id="Shirtee_Dropshipping::dropshipping" title="Dropshipping" module="Shirtee_Dropshipping" sortOrder="1" parent="Shirtee_Dropshipping::shirtee" resource="Shirtee_Dropshipping::dropshipping"/>
+        <add id="Shirtee_Dropshipping::products" title="Products" module="Shirtee_Dropshipping" sortOrder="2" parent="Shirtee_Dropshipping::dropshipping" action="shirtee_dropshipping/products" resource="Shirtee_Dropshipping::products"/>
+        <add id="Shirtee_Dropshipping::orders" title="Orders" module="Shirtee_Dropshipping" sortOrder="3" parent="Shirtee_Dropshipping::dropshipping" action="shirtee_dropshipping/orders" resource="Shirtee_Dropshipping::orders"/>
+        <add id="Shirtee_Dropshipping::settings" title="Settings" module="Shirtee_Dropshipping" sortOrder="4" parent="Shirtee_Dropshipping::dropshipping" action="adminhtml/system_config/edit/section/shirtee" resource="Shirtee_Dropshipping::settings"/>
+    </menu>
+</config>

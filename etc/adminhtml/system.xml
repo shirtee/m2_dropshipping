@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Shirtee. All rights reserved.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <tab id="shirtee" translate="label" sortOrder="10">
+            <label><![CDATA[<span class="shirtee-logo">Shirtee</span>]]></label>
+        </tab>
+        <section id="shirtee" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="0">
+            <label>General</label>
+            <tab>shirtee</tab>
+            <resource>Shirtee_Dropshipping::config</resource>
+            <group id="help" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Help</label>
+                <frontend_model>Shirtee\Dropshipping\Block\Adminhtml\Help</frontend_model>
+            </group>
+            <group id="settings" translate="label" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="0">
+                <label>Settings</label>
+                <field id="enabled" translate="label" type="select" sortOrder="10" showInDefault="1" showInWebsite="0" showInStore="0" canRestore="1">
+                    <label>Enable</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="username" translate="label" type="text" sortOrder="20" showInDefault="1" showInWebsite="0" showInStore="0" canRestore="1">
+                    <label>Shirtee Username</label>
+                </field>
+                <field id="password" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="0" showInStore="0" canRestore="1">
+                    <label>Shirtee Password</label>
+                </field>
+                <field id="product_update_exclude" translate="label" type="multiselect" sortOrder="40" showInDefault="1" showInWebsite="0" showInStore="0" canRestore="1">
+                    <label>Product Update Exclude</label>
+                    <source_model>Shirtee\Dropshipping\Model\Config\Source\ProductUpdateExclude</source_model>
+                </field>
+                <field id="cid" translate="label" type="text" sortOrder="50" showInDefault="0" showInWebsite="1" showInStore="0" canRestore="1">
+                    <label>Shirtee Shop ID</label>
+                </field>
+                <field id="lang" translate="label" type="select" sortOrder="60" showInDefault="0" showInWebsite="1" showInStore="0" canRestore="1">
+                    <label>Shop Language</label>
+                    <source_model>Shirtee\Dropshipping\Model\Config\Source\Language</source_model>
+                </field>
+            </group>
+        </section>
+    </system>
+</config>

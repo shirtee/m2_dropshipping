@@ -1,0 +1,138 @@
+<?php
+/**
+ * Copyright © Shirtee. All rights reserved.
+ */
+?>
+<?php $default_website = ""; if ($websites = $block->getWebsites()): ?>
+<div class="store-switcher store-view">
+    <span class="store-switcher-label"><?= /* @escapeNotVerified */ __('Website:') ?></span>
+    <div class="actions dropdown closable">
+        <input type="hidden" name="website_switcher" id="website_switcher"
+               data-role="website-id" data-param="<?= /* @escapeNotVerified */ $block->getWebsiteVarName() ?>"
+               value="<?= $block->escapeHtml($block->getWebsiteId()) ?>"
+               onchange="switchScope(this);"<?= /* @escapeNotVerified */ $block->getUiId() ?> />
+        <button
+            type="button"
+            class="admin__action-dropdown"
+            data-mage-init='{"dropdown":{}}'
+            data-toggle="dropdown"
+            aria-haspopup="true"
+            id="store-change-button">
+            <?= /* @escapeNotVerified */ $block->getCurrentSelectionName() ?>
+        </button>
+        <ul class="dropdown-menu" data-role="stores-list">
+            <?php foreach ($websites as $website): if ($default_website == "") { $default_website = $website->getId(); } ?>
+                <li class="store-switcher-website <?php if ($block->isWebsiteSelected($website)) { ?> current<?php } ?>">
+                    <?php if ($block->isWebsiteSwitchEnabled() && ! $block->isWebsiteSelected($website)) {
+                        ?>
+                        <a data-role="website-id" data-value="<?= $block->escapeHtml($website->getId()) ?>" href="#">
+                            <?= $block->escapeHtml($website->getName()) ?>
+                        </a>
+                    <?php
+                    } else {
+                        ?>
+                        <span><?= $block->escapeHtml($website->getName()) ?></span>
+                    <?php
+                    } ?>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+    </div>
+</div>
+<script>
+require([
+    'jquery',
+    'Magento_Ui/js/modal/confirm'
+], function(jQuery, confirm){
+
+    jQuery(document).ready(function(){
+        <?php if (!$block->getWebsiteId()) { ?>
+            var website_url = '<?= /* @escapeNotVerified */ $block->getSwitchUrl() ?>website/<?= /* @escapeNotVerified */ $default_website ?>';
+            setLocation(website_url);
+        <?php } ?>
+    });
+
+    (function($) {
+        var $storesList = $('[data-role=stores-list]');
+        $storesList.on('click', '[data-value]', function(event) {
+            var val = $(event.target).data('value');
+            var role = $(event.target).data('role');
+            var switcher = $('[data-role='+role+']');
+
+            event.preventDefault();
+
+            if (!switcher.val() || val != switcher.val()) {
+                switcher.val(val).trigger('change'); // Set the value & trigger event
+            }
+        });
+    })(jQuery);
+
+    var scopeSwitcherHandler;
+
+    function switchScope(obj) {
+        var switcher = jQuery(obj);
+        var scopeId = switcher.val();
+        var scopeParams = '';
+        if (scopeId) {
+            scopeParams = switcher.data('param') + '/' + scopeId + '/';
+        }
+
+        if (obj.switchParams) {
+            scopeParams += obj.switchParams;
+        }
+
+        if ((typeof scopeSwitcherHandler) != 'undefined') {
+            var switcherParams = {
+                scopeId: scopeId,
+                scopeParams: scopeParams,
+                useConfirm: <?= (int)$block->getUseConfirm() ?>
+            };
+            scopeSwitcherHandler(switcherParams);
+        } else {
+
+            <?php if ($block->getUseConfirm()): ?>
+
+            confirm({
+                content:  "<?= /* @escapeNotVerified */ __('Please confirm scope switching. All data that hasn\'t been saved will be lost.') ?>",
+                actions: {
+                    confirm: function() {
+                        reload();
+                    },
+                    cancel: function() {
+                        obj.value = '<?= $block->escapeHtml($block->getStoreId()) ?>';
+                    }
+                }
+            });
+
+            <?php else: ?>
+                reload();
+            <?php endif; ?>
+        }
+
+        function reload() {
+            <?php if (!$block->isUsingIframe()): ?>
+            var url = '<?= /* @escapeNotVerified */ $block->getSwitchUrl() ?>' + scopeParams;
+            setLocation(url);
+            <?php else: ?>
+            jQuery('#preview_selected_store').val(scopeId);
+            jQuery('#preview_form').submit();
+
+            jQuery('.store-switcher .dropdown-menu li a').each(function() {
+                var $this = jQuery(this);
+
+                if ($this.data('role') === 'store-view-id' && $this.data('value') == scopeId) {
+                    jQuery('#store-change-button').html($this.text());
+                }
+            });
+
+            jQuery('#store-change-button').click();
+            <?php endif; ?>
+        }
+    }
+
+    window.scopeSwitcherHandler = scopeSwitcherHandler;
+    window.switchScope = switchScope;
+
+});
+</script>
+<?php endif; ?>

@@ -1,0 +1,44 @@
+<?php
+/**
+ * Copyright © Shirtee. All rights reserved.
+ */
+?>
+<style type="text/css">
+table {
+	border-bottom: 1px solid;
+}
+th, td {
+	border-left: 1px solid;
+	padding: 5px 10px;
+	border-top: 1px solid;
+}
+th:last-child, td:last-child {
+	border-right: 1px solid;
+}
+</style>
+<?php
+$collection = $block->getDbHistory();
+if ($collection != null) {
+?>
+<table cellpadding="0" cellspacing="0" border="0" width="100%">
+<?php
+	$count=0;
+	foreach ($collection as $history) {
+		if ($count == 0) {
+			echo "<tr>";
+			foreach ($history->getData() as $hkey => $hval) {
+				echo '<th>'.$hkey.'</th>';
+			}
+			echo "</tr>";
+		}
+
+		echo "<tr>";
+		foreach ($history->getData() as $hkey => $hval) {
+			echo '<td>'.strip_tags($hval).'</td>';
+		}
+		echo "</tr>";
+		$count++;
+	}
+?>
+</table>
+<?php } ?>

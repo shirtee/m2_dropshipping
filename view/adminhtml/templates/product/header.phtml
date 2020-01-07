@@ -1,0 +1,24 @@
+<?php
+/**
+ * Copyright © Shirtee. All rights reserved.
+ */
+?>
+<?php
+$data = $block->getCronProductData();
+if ($data["pending"] > 0) {
+?>
+	<div class="progress_area">
+		<?php
+			$total_products = $data["pending"] + $data["complete"];
+			$per = round(100 * $data["complete"] / $total_products);
+		?>
+		<div class="progress_msg">
+			Total <strong><?=$data["pending"]?></strong> products out of <strong><?=$total_products?></strong> are pending to sync.
+		</div>
+		<div class="progress">
+			<div class="progress-bar" style="width: <?=$per?>%"><?=$per?>%</div>
+		</div>
+	</div>
+<?php
+}
+?>

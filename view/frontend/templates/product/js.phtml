@@ -1,0 +1,37 @@
+<?php
+/**
+ * Copyright © Shirtee. All rights reserved.
+ */
+?>
+<?php
+$product = $block->getProduct();
+if ($product->getIsShirtee() == 1) {
+?>
+<script type="text/javascript">
+require(['jquery'], function($){
+	$('.super-attribute-select').change(function () {
+		var api = $('[data-gallery-role=gallery-placeholder]').data('gallery');
+        var color_text = $(this).find('option:selected').text();
+
+		$('.fotorama__nav__shaft').find("img").each(function(index) {
+			if (color_text == $(this).attr("alt")) {
+				api.seek(eval(index)+1);
+			}	
+		});
+    });
+
+	$(document).on('click', '.swatch-option', function() {
+		var api = $('[data-gallery-role=gallery-placeholder]').data('gallery');
+        var color_text = $(this).attr("option-label");
+
+		$('.fotorama__nav__shaft').find("img").each(function(index) {
+			if (color_text == $(this).attr("alt")) {
+				api.seek(eval(index)+1);
+			}
+		});
+    });
+});
+</script>
+<?php
+}
+?>

@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Shirtee. All rights reserved.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+    <event name="checkout_submit_all_after">
+        <observer name="shirtee_checkout_submit_all_after" instance="Shirtee\Dropshipping\Observer\SalesOrderPlaceAfter" />
+    </event>
+    <event name="sales_order_save_after">
+        <observer name="shirtee_order_save_after" instance="Shirtee\Dropshipping\Observer\SalesOrderSaveAfter" />
+    </event>
+</config>

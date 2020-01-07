@@ -1,0 +1,110 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Shirtee. All rights reserved.
+ */
+-->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+	<referenceContainer name="content">
+		<referenceBlock name="adminhtml.shirtee.product.grid.container">
+			<block class="Shirtee\Dropshipping\Block\Adminhtml\Product\Grid" name="adminhtml.shirtee.product.grid" as="grid">
+                <arguments>
+                    <argument name="id" xsi:type="string">productGrid</argument>
+                    <argument name="dataSource" xsi:type="object" shared="false">Shirtee\Dropshipping\Model\ResourceModel\Product\Collection</argument>
+                    <argument name="default_dir" xsi:type="string">ASC</argument>
+                    <argument name="default_sort" xsi:type="string">pid</argument>
+                    <argument name="save_parameters_in_session" xsi:type="string">1</argument>
+                    <argument name="use_ajax" xsi:type="string">1</argument>
+                    <argument name="grid_url" xsi:type="url" path="*/*/grid">
+                        <param name="_current">1</param>
+                    </argument>
+                </arguments>
+                <block class="Magento\Backend\Block\Widget\Grid\Massaction" name="adminhtml.shirtee.product.grid.massaction" as="grid.massaction">
+                    <arguments>
+                        <argument name="massaction_id_field" xsi:type="string">pid</argument>
+                        <argument name="form_field_name" xsi:type="string">pid</argument>
+                        <argument name="use_select_all" xsi:type="string">1</argument>
+                        <argument name="options" xsi:type="array">
+                            <item name="import_update" xsi:type="array">
+                                <item name="label" xsi:type="string" translate="true">Import/Update</item>
+                                <item name="url" xsi:type="string">*/*/massImportUpdate</item>
+                            </item>
+                            <item name="remove" xsi:type="array">
+                                <item name="label" xsi:type="string" translate="true">Remove</item>
+                                <item name="url" xsi:type="string">*/*/massRemove</item>
+                            </item>
+                        </argument>
+                    </arguments>
+                </block>
+                <block class="Magento\Backend\Block\Widget\Grid\Export" name="adminhtml.shirtee.product.grid.export" as="grid.export">
+                    <arguments>
+                        <argument name="exportTypes" xsi:type="array">
+                            <item name="csv" xsi:type="array">
+                                <item name="urlPath" xsi:type="string">*/*/exportCsv</item>
+                                <item name="label" xsi:type="string" translate="true">CSV</item>
+                            </item>
+                        </argument>
+                    </arguments>
+                </block>
+                <block class="Magento\Backend\Block\Widget\Grid\ColumnSet" name="adminhtml.shirtee.product.grid.columnSet" as="grid.columnSet">
+                    <block class="Magento\Backend\Block\Widget\Grid\Column" name="adminhtml.shirtee.product.grid.columnSet.website_id" as="website_id">
+                        <arguments>
+                            <argument name="header" xsi:type="string" translate="true">Website</argument>
+                            <argument name="index" xsi:type="string">website_id</argument>
+                            <argument name="type" xsi:type="string">options</argument>
+                            <argument name="options" xsi:type="options" model="Magento\Config\Model\Config\Source\Website\OptionHash"/>
+                        </arguments>
+                    </block>
+                    <block class="Magento\Backend\Block\Widget\Grid\Column" name="adminhtml.shirtee.product.grid.columnSet.sku" as="sku">
+                        <arguments>
+                            <argument name="header" xsi:type="string" translate="true">SKU</argument>
+                            <argument name="index" xsi:type="string">sku</argument>
+                        </arguments>
+                    </block>
+                    <block class="Magento\Backend\Block\Widget\Grid\Column" name="adminhtml.shirtee.product.grid.columnSet.category" as="category">
+                        <arguments>
+                            <argument name="header" xsi:type="string" translate="true">Product</argument>
+                            <argument name="index" xsi:type="string">category</argument>
+                        </arguments>
+                    </block>
+                    <block class="Magento\Backend\Block\Widget\Grid\Column" name="adminhtml.shirtee.product.grid.columnSet.name" as="name">
+                        <arguments>
+                            <argument name="header" xsi:type="string" translate="true">Name</argument>
+                            <argument name="index" xsi:type="string">name</argument>
+                        </arguments>
+                    </block>
+                    <block class="Magento\Backend\Block\Widget\Grid\Column" name="adminhtml.shirtee.product.grid.columnSet.variations" as="variations">
+                        <arguments>
+                            <argument name="header" xsi:type="string" translate="true">Variations</argument>
+                            <argument name="index" xsi:type="string">variations</argument>
+                        </arguments>
+                    </block>
+                    <block class="Magento\Backend\Block\Widget\Grid\Column" name="adminhtml.shirtee.product.grid.columnSet.mage_pid" as="mage_pid">
+                        <arguments>
+                            <argument name="header" xsi:type="string" translate="true">Magento ID</argument>
+                            <argument name="index" xsi:type="string">mage_pid</argument>
+                            <argument name="default" xsi:type="string">-</argument>
+                        </arguments>
+                    </block>
+                    <block class="Magento\Backend\Block\Widget\Grid\Column" name="adminhtml.shirtee.product.grid.columnSet.status" as="status">
+                        <arguments>
+                            <argument name="header" xsi:type="string" translate="true">Status</argument>
+                            <argument name="index" xsi:type="string">status</argument>
+                            <argument name="type" xsi:type="string">options</argument>
+                            <argument name="options" xsi:type="array">
+                                <item name="status_imported" xsi:type="array">
+                                    <item name="value" xsi:type="string">1</item>
+                                    <item name="label" xsi:type="string" translate="true">Imported</item>
+                                </item>
+                                <item name="status_not_imported" xsi:type="array">
+                                    <item name="value" xsi:type="string">0</item>
+                                    <item name="label" xsi:type="string" translate="true">Not Imported</item>
+                                </item>
+                            </argument>
+                        </arguments>
+                    </block>
+                </block>
+            </block>
+		</referenceBlock>	
+	</referenceContainer>
+</page>
