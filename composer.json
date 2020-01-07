@@ -1,7 +1,10 @@
 {
     "name": "shirtee/m2_dropshipping",
-    "description": "N/A",
+    "description": "Design and sell your own apparel collections without any upfront costs!",
     "type": "magento2-module",
+    "license": [
+        "OSL-3.0"
+    ],
     "autoload": {
         "files": [
             "registration.php"
