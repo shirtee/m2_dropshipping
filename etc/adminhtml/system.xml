@@ -7,7 +7,7 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
     <system>
         <tab id="shirtee" translate="label" sortOrder="10">
-            <label><![CDATA[<span class="shirtee-logo">Shirtee</span>]]></label>
+            <label>Shirtee</label>
         </tab>
         <section id="shirtee" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="0">
             <label>General</label>
