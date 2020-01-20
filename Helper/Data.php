@@ -39,10 +39,10 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public $session;
     public $moduleList;
 
-    public $cloud_api_url_product = "https://shirtee.cloud/magento/connection";
-    public $cloud_api_url_product_rules = "https://shirtee.cloud/magento/productrules";
-    public $cloud_api_url_order = "https://shirtee.cloud/magento/orderprocess";
-    public $cloud_api_url_notify = "https://shirtee.cloud/magento/connectionprocess";
+    public $cloud_api_url_product = "https://dashboard.shirtee.cloud/magento/connection";
+    public $cloud_api_url_product_rules = "https://dashboard.shirtee.cloud/magento/productrules";
+    public $cloud_api_url_order = "https://dashboard.shirtee.cloud/magento/orderprocess";
+    public $cloud_api_url_notify = "https://dashboard.shirtee.cloud/magento/connectionprocess";
     public $is_enabled;
     public $username;
     public $password;
