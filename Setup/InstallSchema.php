@@ -163,7 +163,7 @@ class InstallSchema implements InstallSchemaInterface
                 'Shirtee Product Options'
             )->addColumn(
                 'variations',
-                Table::TYPE_INTEGER,
+                Table::TYPE_SMALLINT,
                 null,
                 [
                     'unsigned' => true,
@@ -181,7 +181,7 @@ class InstallSchema implements InstallSchemaInterface
                 'Shirtee Product Images'
             )->addColumn(
                 'is_warehouse',
-                Table::TYPE_INTEGER,
+                Table::TYPE_SMALLINT,
                 null,
                 [
                     'unsigned' => true,
@@ -190,8 +190,18 @@ class InstallSchema implements InstallSchemaInterface
                 ],
                 'Is Warehouse Product?'
             )->addColumn(
+                'is_alloverprint',
+                Table::TYPE_SMALLINT,
+                null,
+                [
+                    'unsigned' => true,
+                    'nullable' => true,
+                    'default' => 0
+                ],
+                'Is AllOverPrint Product?'
+            )->addColumn(
                 'is_customize',
-                Table::TYPE_INTEGER,
+                Table::TYPE_SMALLINT,
                 null,
                 [
                     'unsigned' => true,
@@ -201,7 +211,7 @@ class InstallSchema implements InstallSchemaInterface
                 'Is Customize Product?'
             )->addColumn(
                 'is_cron_create',
-                Table::TYPE_INTEGER,
+                Table::TYPE_SMALLINT,
                 null,
                 [
                     'unsigned' => true,
@@ -211,7 +221,7 @@ class InstallSchema implements InstallSchemaInterface
                 'Is Schedule For Create?'
             )->addColumn(
                 'is_cron_modify',
-                Table::TYPE_INTEGER,
+                Table::TYPE_SMALLINT,
                 null,
                 [
                     'unsigned' => true,
@@ -221,7 +231,7 @@ class InstallSchema implements InstallSchemaInterface
                 'Is Schedule For Modify?'
             )->addColumn(
                 'is_cron_remove',
-                Table::TYPE_INTEGER,
+                Table::TYPE_SMALLINT,
                 null,
                 [
                     'unsigned' => true,
@@ -231,7 +241,7 @@ class InstallSchema implements InstallSchemaInterface
                 'Is Schedule For Remove?'
             )->addColumn(
                 'website_id',
-                Table::TYPE_INTEGER,
+                Table::TYPE_SMALLINT,
                 null,
                 [
                     'unsigned' => true,
@@ -241,7 +251,7 @@ class InstallSchema implements InstallSchemaInterface
                 'Website ID'
             )->addColumn(
                 'status',
-                Table::TYPE_INTEGER,
+                Table::TYPE_SMALLINT,
                 null,
                 [
                     'unsigned' => true,
@@ -267,6 +277,10 @@ class InstallSchema implements InstallSchemaInterface
                     'default' => Table::TIMESTAMP_INIT_UPDATE
                 ],
                 'Update Time'
+            )->addIndex(
+                $setup->getIdxName($tableName, ['mage_pid']),
+                ['mage_pid'],
+                ['type' => \Magento\Framework\DB\Adapter\Pdo\Mysql::INDEX_TYPE_UNIQUE]
             );
         $setup->getConnection()->createTable($table);
     }
@@ -321,6 +335,14 @@ class InstallSchema implements InstallSchemaInterface
                 ],
                 'Shirtee Color'
             )->addColumn(
+                'color_ds',
+                Table::TYPE_TEXT,
+                null,
+                [
+                    'nullable' => true
+                ],
+                'Shirtee Color DS'
+            )->addColumn(
                 'created_at',
                 Table::TYPE_TIMESTAMP,
                 null,
@@ -370,7 +392,7 @@ class InstallSchema implements InstallSchemaInterface
                 'Shirtee Product ID'
             )->addColumn(
                 'website_id',
-                Table::TYPE_INTEGER,
+                Table::TYPE_SMALLINT,
                 null,
                 [
                     'unsigned' => true,
@@ -380,7 +402,7 @@ class InstallSchema implements InstallSchemaInterface
                 'Website ID'
             )->addColumn(
                 'status',
-                Table::TYPE_INTEGER,
+                Table::TYPE_SMALLINT,
                 null,
                 [
                     'unsigned' => true,
@@ -446,7 +468,7 @@ class InstallSchema implements InstallSchemaInterface
                 'Product ID'
             )->addColumn(
                 'status',
-                Table::TYPE_INTEGER,
+                Table::TYPE_SMALLINT,
                 null,
                 [
                     'unsigned' => true,
@@ -480,6 +502,10 @@ class InstallSchema implements InstallSchemaInterface
                     'default' => Table::TIMESTAMP_INIT_UPDATE
                 ],
                 'Update Time'
+            )->addIndex(
+                $setup->getIdxName($tableName, ['pid']),
+                ['pid'],
+                ['type' => \Magento\Framework\DB\Adapter\Pdo\Mysql::INDEX_TYPE_UNIQUE]
             );
         $setup->getConnection()->createTable($table);
     }
@@ -512,7 +538,7 @@ class InstallSchema implements InstallSchemaInterface
                 'Product ID'
             )->addColumn(
                 'status',
-                Table::TYPE_INTEGER,
+                Table::TYPE_SMALLINT,
                 null,
                 [
                     'unsigned' => true,
@@ -578,7 +604,7 @@ class InstallSchema implements InstallSchemaInterface
                 'Product ID'
             )->addColumn(
                 'status',
-                Table::TYPE_INTEGER,
+                Table::TYPE_SMALLINT,
                 null,
                 [
                     'unsigned' => true,
@@ -612,6 +638,10 @@ class InstallSchema implements InstallSchemaInterface
                     'default' => Table::TIMESTAMP_INIT_UPDATE
                 ],
                 'Update Time'
+            )->addIndex(
+                $setup->getIdxName($tableName, ['pid']),
+                ['pid'],
+                ['type' => \Magento\Framework\DB\Adapter\Pdo\Mysql::INDEX_TYPE_UNIQUE]
             );
         $setup->getConnection()->createTable($table);
     }
@@ -707,7 +737,7 @@ class InstallSchema implements InstallSchemaInterface
                 'Shirtee Order Status'
             )->addColumn(
                 'is_fulfilled',
-                Table::TYPE_INTEGER,
+                Table::TYPE_SMALLINT,
                 null,
                 [
                     'unsigned' => true,
@@ -717,7 +747,7 @@ class InstallSchema implements InstallSchemaInterface
                 'Is Order Fulfilled?'
             )->addColumn(
                 'is_partial',
-                Table::TYPE_INTEGER,
+                Table::TYPE_SMALLINT,
                 null,
                 [
                     'unsigned' => true,
@@ -726,8 +756,18 @@ class InstallSchema implements InstallSchemaInterface
                 ],
                 'Is Partial Order?'
             )->addColumn(
+                'is_sync_cloud',
+                Table::TYPE_SMALLINT,
+                null,
+                [
+                    'unsigned' => true,
+                    'nullable' => true,
+                    'default' => 0
+                ],
+                'Is Order Sync From Cloud?'
+            )->addColumn(
                 'is_warehouse',
-                Table::TYPE_INTEGER,
+                Table::TYPE_SMALLINT,
                 null,
                 [
                     'unsigned' => true,
@@ -744,8 +784,44 @@ class InstallSchema implements InstallSchemaInterface
                 ],
                 'Warehouse Products'
             )->addColumn(
+                'is_alloverprint',
+                Table::TYPE_SMALLINT,
+                null,
+                [
+                    'unsigned' => true,
+                    'nullable' => true,
+                    'default' => 0
+                ],
+                'Is AllOverPrint Order?'
+            )->addColumn(
+                'alloverprint_items',
+                Table::TYPE_TEXT,
+                null,
+                [
+                    'nullable' => true
+                ],
+                'AllOverPrint Products'
+            )->addColumn(
+                'is_customer',
+                Table::TYPE_SMALLINT,
+                null,
+                [
+                    'unsigned' => true,
+                    'nullable' => true,
+                    'default' => 0
+                ],
+                'Is Customer Order?'
+            )->addColumn(
+                'customer_items',
+                Table::TYPE_TEXT,
+                null,
+                [
+                    'nullable' => true
+                ],
+                'Customer Products'
+            )->addColumn(
                 'is_branding',
-                Table::TYPE_INTEGER,
+                Table::TYPE_SMALLINT,
                 null,
                 [
                     'unsigned' => true,
@@ -763,7 +839,7 @@ class InstallSchema implements InstallSchemaInterface
                 'Branding Products'
             )->addColumn(
                 'is_return_order',
-                Table::TYPE_INTEGER,
+                Table::TYPE_SMALLINT,
                 null,
                 [
                     'unsigned' => true,
@@ -779,6 +855,24 @@ class InstallSchema implements InstallSchemaInterface
                     'nullable' => true
                 ],
                 'Return Order Items'
+            )->addColumn(
+                'is_free_order',
+                Table::TYPE_SMALLINT,
+                null,
+                [
+                    'unsigned' => true,
+                    'nullable' => true,
+                    'default' => 0
+                ],
+                'Is Free Order?'
+            )->addColumn(
+                'free_order_items',
+                Table::TYPE_TEXT,
+                null,
+                [
+                    'nullable' => true
+                ],
+                'Free Order Items'
             )->addColumn(
                 'tracking_date',
                 Table::TYPE_TIMESTAMP,
@@ -805,7 +899,7 @@ class InstallSchema implements InstallSchemaInterface
                 'Tracking Number'
             )->addColumn(
                 'website_id',
-                Table::TYPE_INTEGER,
+                Table::TYPE_SMALLINT,
                 null,
                 [
                     'unsigned' => true,
@@ -839,6 +933,10 @@ class InstallSchema implements InstallSchemaInterface
                     'default' => Table::TIMESTAMP_INIT_UPDATE
                 ],
                 'Update Time'
+            )->addIndex(
+                $setup->getIdxName($tableName, ['magento_oid', 'shirtee_oid']),
+                ['magento_oid', 'shirtee_oid'],
+                ['type' => \Magento\Framework\DB\Adapter\Pdo\Mysql::INDEX_TYPE_UNIQUE]
             );
         $setup->getConnection()->createTable($table);
     }
@@ -878,7 +976,7 @@ class InstallSchema implements InstallSchemaInterface
                 'Log Data'
             )->addColumn(
                 'status',
-                Table::TYPE_INTEGER,
+                Table::TYPE_SMALLINT,
                 null,
                 [
                     'unsigned' => true,

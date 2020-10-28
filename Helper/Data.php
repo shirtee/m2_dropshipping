@@ -43,6 +43,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public $cloud_api_url_product_rules = "https://dashboard.shirtee.cloud/magento/productrules";
     public $cloud_api_url_order = "https://dashboard.shirtee.cloud/magento/orderprocess";
     public $cloud_api_url_notify = "https://dashboard.shirtee.cloud/magento/connectionprocess";
+    public $is_dropshipping;
     public $is_enabled;
     public $username;
     public $password;
@@ -221,17 +222,20 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 $cid = $this->scopeConfig->getValue('shirtee/settings/cid', \Magento\Store\Model\ScopeInterface::SCOPE_WEBSITE, $this->website);
                 $lang = $this->scopeConfig->getValue('shirtee/settings/lang', \Magento\Store\Model\ScopeInterface::SCOPE_WEBSITE, $this->website);
                 $access_token = $this->scopeConfig->getValue('shirtee/settings/access_token', \Magento\Store\Model\ScopeInterface::SCOPE_WEBSITE, $this->website);
+
+                $is_dropshipping = $this->scopeConfig->getValue('shirtee/settings/is_dropshipping');
                 $product_update_exclude = $this->scopeConfig->getValue('shirtee/settings/product_update_exclude');
 
                 $this->cid = $cid;
                 $this->lang = $lang;
                 $this->access_token = $access_token;
+                $this->is_dropshipping = $is_dropshipping;
                 $this->product_update_exclude = $product_update_exclude;
                 $this->website_name = $this->storeManager->getWebsite($this->website)->getName();
                 $this->website_url = $this->scopeConfig->getValue('web/secure/base_url', \Magento\Store\Model\ScopeInterface::SCOPE_WEBSITE, $this->website);
 
-                $this->messageManager->getMessages(true);
                 if (!$this->cid) {
+                    $this->messageManager->getMessages(true);
                     $this->messageManager->addWarning(__("Please add Shirtee Shop ID."));
                 }
             }
@@ -546,9 +550,10 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 }
             }
 
-            $url_key = preg_replace('/[^a-zA-Z0-9-]/', '', str_replace(" ", "-", strtolower($data["campaign_title"])));
-            $url_key = str_replace("--", "-", $url_key);
-            $url_key = str_replace("--", "-", $url_key);
+            $campaign_id = explode("_", $data["sku"]);
+            $campaign_id = strtolower($campaign_id[0]);
+            $url_key = str_replace(" ", "-", str_replace("  ", " ", strtolower($data["campaign_title"])."-".$campaign_id));
+            $url_key = preg_replace('/[^a-zA-Z0-9-]/', '', $url_key);
 
             $attributeValues_colors = [];
             $attributeValues_sizes = [];
@@ -1533,6 +1538,10 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function doSettings($post_data)
     {
+        if (isset($post_data["is_dropshipping"])) {
+            $this->configWriter->save("shirtee/settings/is_dropshipping", $post_data["is_dropshipping"], "default", 0);
+        }
+
         if (isset($post_data["enabled"])) {
             $this->configWriter->save("shirtee/settings/enabled", $post_data["enabled"], "default", 0);
         }
@@ -1543,6 +1552,10 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
         if (isset($post_data["password"])) {
             $this->configWriter->save("shirtee/settings/password", $post_data["password"], "default", 0);
+        }
+
+        if (isset($post_data["product_update_exclude"])) {
+            $this->configWriter->save("shirtee/settings/product_update_exclude", $post_data["product_update_exclude"], "default", 0);
         }
 
         if (isset($post_data["website_id"]) && isset($post_data["access_token"])) {
@@ -1655,18 +1668,26 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $rule_type = "";
         $color_Arr = [];
 
-        $product_rule_collection = $this->productRuleCollectionFactory->create()->addFieldToFilter("sku", $sku)->addFieldToFilter("size", $size)->addFieldToSelect(["rule_type", "color"]);
+        $product_rule_collection = $this->productRuleCollectionFactory->create()->addFieldToFilter("sku", $sku)->addFieldToFilter("size", $size)->addFieldToSelect(["rule_type", "color", "color_ds"]);
         if ($product_rule_collection->count()) {
             foreach ($product_rule_collection as $product_rule) {
                 $rule_type = $product_rule->getRuleType();
-                $color_Arr = explode(",", $product_rule->getColor());
+                if ($this->is_dropshipping == "0") {
+                    $color_Arr = explode(",", $product_rule->getColor());
+                } else {
+                    $color_Arr = explode(",", $product_rule->getColorDs());
+                }
             }
         } else {
-            $product_rule_collection = $this->productRuleCollectionFactory->create()->addFieldToFilter("sku", $sku)->addFieldToFilter("size", ['null' => true])->addFieldToSelect(["rule_type", "color"]);
+            $product_rule_collection = $this->productRuleCollectionFactory->create()->addFieldToFilter("sku", $sku)->addFieldToFilter("size", ['null' => true])->addFieldToSelect(["rule_type", "color", "color_ds"]);
             if ($product_rule_collection->count()) {
                 foreach ($product_rule_collection as $product_rule) {
                     $rule_type = $product_rule->getRuleType();
-                    $color_Arr = explode(",", $product_rule->getColor());
+                    if ($this->is_dropshipping == "0") {
+                        $color_Arr = explode(",", $product_rule->getColor());
+                    } else {
+                        $color_Arr = explode(",", $product_rule->getColorDs());
+                    }
                 }
             }
         }
@@ -1701,6 +1722,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                                  ->setRuleType($prdata["rule_type"])
                                  ->setSize($prdata["size"])
                                  ->setColor($prdata["color"])
+                                 ->setColorDs($prdata["color_ds"])
                                  ->save();
                 }
             }

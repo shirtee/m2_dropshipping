@@ -55,6 +55,14 @@ class Settings implements ObserverInterface
             $this->shirteeHelper->messageManager->getMessages(true);
         }
 
+        $is_dropshipping = $this->scopeConfig->getValue('shirtee/settings/is_dropshipping');
+        if ($is_dropshipping == "") {
+            $this->shirteeHelper->configWriter->save("shirtee/settings/is_dropshipping", 1, "default", 0);
+            $post_data["is_dropshipping"] = 1;
+        } else {
+            $post_data["is_dropshipping"] = $is_dropshipping;
+        }
+
         $this->shirteeHelper->notifyShirteeCloud("do_settings", $post_data);
     }
 }
