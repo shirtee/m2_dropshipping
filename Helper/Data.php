@@ -185,6 +185,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         if (!$this->is_enabled) {
             $this->messageManager->getMessages(true);
             $this->messageManager->addWarning(__("Please enable module."));
+            $this->doDebug(["type" => "M2_moduleStatus", "ldata" => "Disable", "status" => 1, "error" => ""]);
         } else {
             $this->username = $this->scopeConfig->getValue('shirtee/settings/username');
             $this->password = $this->scopeConfig->getValue('shirtee/settings/password');
@@ -192,6 +193,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             if (!$this->username || !$this->password) {
                 $this->messageManager->getMessages(true);
                 $this->messageManager->addWarning(__("Please add Shirtee Username and Shirtee Password."));
+                $this->doDebug(["type" => "M2_apiDetail", "ldata" => "Missing", "status" => 1, "error" => ""]);
             } else {
                 $this->setApiDetails();
             }
@@ -560,6 +562,8 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             $associatedProductIds = [];
 
             $img_data = array_flip($options["img_data"]);
+            $order_data = $options["order_data"];
+            $cs_map_data = $options["cs_map_data"];
             $options = $options["options_data"];
             
             foreach ($options[0]["values"] as $ckey => $color) {
@@ -571,6 +575,16 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                     if (isset($temp_sku[1])) {
                         $is_allowed = $this->checkColorSizeAllowed($temp_sku[1], $temp_color, $temp_size);
                         if ($is_allowed == "0") {
+                            continue;
+                        }
+                    }
+                    if (isset($cs_map_data["colors"][$temp_color])) {
+                        if (!in_array($order_data[$temp_size], $cs_map_data["colors"][$temp_color])) {
+                            continue;
+                        }
+                    }
+                    if (isset($cs_map_data["sizes"][$temp_size])) {
+                        if (!in_array($temp_color, $cs_map_data["sizes"][$temp_size])) {
                             continue;
                         }
                     }
@@ -613,7 +627,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                         ->setShirteeSize($size_data["options"][$size])
                         ->setVisibility($this->productVisibility::VISIBILITY_NOT_VISIBLE)
                         ->setStatus($this->productAttributeSourceStatus::STATUS_ENABLED)
-                        ->setStockData(['use_config_manage_stock' => 1, 'qty' => 10000, 'is_qty_decimal' => 0, 'is_in_stock' => 1]);
+                        ->setStockData(['use_config_manage_stock' => 0, 'manage_stock' => 0, 'is_in_stock' => 1]);
 
                     if ($data["special_price"] != "" && $data["special_price"] > 0) {
                         $prd_simple->setSpecialPrice($data["special_price"]);
@@ -669,7 +683,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 ->setUrlKey($url_key)
                 ->setVisibility($this->productVisibility::VISIBILITY_BOTH)
                 ->setStatus($this->productAttributeSourceStatus::STATUS_ENABLED)
-                ->setStockData(['use_config_manage_stock' => 1, 'is_in_stock' => 1]);
+                ->setStockData(['use_config_manage_stock' => 0, 'manage_stock' => 0, 'is_in_stock' => 1]);
 
             if ($type == "create") {
                 $prd_configurable->setName($data["campaign_title"])
@@ -1057,6 +1071,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $img_data = [];
         $options_db = [];
         $order_data = [];
+        $cs_map_data = ["colors" => [], "sizes" => []];
         $options_data = $this->getProductCustomOptionsById($product_id);
         krsort($options_data);
 
@@ -1068,11 +1083,18 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                     $values[] = $opt_data["title"];
                     $img_data[$opt_data["sku"]] = $opt_data["title"];
                     $order_data[$opt_data["sku"]] = $opt_data["value_id"];
+
+                    if (isset($opt_data["sizes"])) {
+                        $cs_map_data["colors"][$opt_data["sku"]] = $opt_data["sizes"];
+                    }
+                    if (isset($opt_data["colors"])) {
+                        $cs_map_data["sizes"][$opt_data["sku"]] = $opt_data["colors"];
+                    }
                 }
             }
             $options_db[] = ["name" => $option["title"], "values" => $values];
         }
-        $options = ["img_data" => $img_data, "options_data" => $options_db, "order_data" => $order_data];
+        $options = ["img_data" => $img_data, "options_data" => $options_db, "order_data" => $order_data, "cs_map_data" => $cs_map_data];
 
         return $options;
     }
