@@ -63,6 +63,22 @@ class Settings implements ObserverInterface
             $post_data["is_dropshipping"] = $is_dropshipping;
         }
 
+        $designer_id = $this->scopeConfig->getValue('shirtee/settings/designer_id');
+        if ($designer_id == "") {
+            $this->shirteeHelper->configWriter->save("shirtee/settings/designer_id", 0, "default", 0);
+            $post_data["designer_id"] = 0;
+        } else {
+            $post_data["designer_id"] = $designer_id;
+        }
+
+        $cloud_id = $this->scopeConfig->getValue('shirtee/settings/cloud_id');
+        if ($cloud_id == "") {
+            $this->shirteeHelper->configWriter->save("shirtee/settings/cloud_id", 0, "default", 0);
+            $post_data["cloud_id"] = 0;
+        } else {
+            $post_data["cloud_id"] = $cloud_id;
+        }
+
         $this->shirteeHelper->notifyShirteeCloud("do_settings", $post_data);
     }
 }

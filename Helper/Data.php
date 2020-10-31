@@ -39,10 +39,8 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public $session;
     public $moduleList;
 
-    public $cloud_api_url_product = "https://dashboard.shirtee.cloud/magento/connection";
-    public $cloud_api_url_product_rules = "https://dashboard.shirtee.cloud/magento/productrules";
-    public $cloud_api_url_order = "https://dashboard.shirtee.cloud/magento/orderprocess";
-    public $cloud_api_url_notify = "https://dashboard.shirtee.cloud/magento/connectionprocess";
+    public $designer_id;
+    public $cloud_id;
     public $is_dropshipping;
     public $is_enabled;
     public $username;
@@ -204,7 +202,6 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     {
         $moduleName = 'Shirtee_Dropshipping';
         $moduleInfo = $this->moduleList->getOne($moduleName);
-        
         return $moduleInfo['setup_version'];
     }
 
@@ -226,12 +223,16 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 $access_token = $this->scopeConfig->getValue('shirtee/settings/access_token', \Magento\Store\Model\ScopeInterface::SCOPE_WEBSITE, $this->website);
 
                 $is_dropshipping = $this->scopeConfig->getValue('shirtee/settings/is_dropshipping');
+                $designer_id = $this->scopeConfig->getValue('shirtee/settings/designer_id');
+                $cloud_id = $this->scopeConfig->getValue('shirtee/settings/cloud_id');
                 $product_update_exclude = $this->scopeConfig->getValue('shirtee/settings/product_update_exclude');
 
                 $this->cid = $cid;
                 $this->lang = $lang;
                 $this->access_token = $access_token;
                 $this->is_dropshipping = $is_dropshipping;
+                $this->designer_id = $designer_id;
+                $this->cloud_id = $cloud_id;
                 $this->product_update_exclude = $product_update_exclude;
                 $this->website_name = $this->storeManager->getWebsite($this->website)->getName();
                 $this->website_url = $this->scopeConfig->getValue('web/secure/base_url', \Magento\Store\Model\ScopeInterface::SCOPE_WEBSITE, $this->website);
@@ -251,7 +252,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             "type" => $type,
             "params" => $post_data
         ];
-        $result = $this->doCurlRequest($this->cloud_api_url_product, $params);
+        $result = $this->doCurlRequest("https://dashboard.shirtee.cloud/magento/connection", $params);
 
         $status = 1;
         $msg = "";
@@ -271,7 +272,6 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             ];
             $this->sendMail($mail_data);
         }
-
         return $result;
     }
 
@@ -331,7 +331,6 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         } catch (Exception $e) {
             return ["status" => "error", "msg" => $e->getMessage().", ".$e->getTraceAsString()];
         }
-
         return !empty($matches[1]) ? trim($matches[1][0]) : $url;
     }
 
@@ -352,7 +351,6 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 $data[$val["label"]] = $val["value"];
             }
         }
-
         return ["id" => $attribute->getId(), "name" => $attribute->getName(), "options" => $data];
     }
 
@@ -371,7 +369,6 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         if ($result) {
             $product->addImageToMediaGallery($newFileName, $imageType, false, false);
         }
-
         return $result;
     }
 
@@ -462,7 +459,6 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 $total_process = ["count" => (count($create_Arr)+count($modify_Arr)), "create" => $create_Arr, "modify" => $modify_Arr];
             }
         }
-
         return $total_process;
     }
 
@@ -500,7 +496,6 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 $total_process = ["count" => count($remove_Arr), "remove" => $remove_Arr];
             }
         }
-
         return $total_process;
     }
 
@@ -515,7 +510,6 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 }
             }
         }
-
         return $data;
     }
 
@@ -723,6 +717,10 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                     $_img["src"] = $this->getImageUrl($_img["src"]);
                     $this->uploadImageToMediaGallery($prd_configurable, $_img["src"], $imageType);
                 }
+                $m_image = $this->getMeasurementImage($data["sku"]);
+                if ($m_image["image"] != "") {
+                    $this->uploadImageToMediaGallery($prd_configurable, $m_image["image"]);
+                }
             }
 
             $prd_configurable = $this->productRepository->save($prd_configurable);
@@ -856,11 +854,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     {
         $data = $this->getProductById($product->getShirteePid());
         if (isset($data["sku"])) {
-            foreach ($data as $dkey => $dval) {
-                if (!is_array($dval)) {
-                    $data[$dkey] = utf8_encode($dval);
-                }
-            }
+            $data = $this->processSpecialCharacters("encode", $data);
 
             //Get Product Options
             $options = $this->getProductOptions($data["product_id"]);
@@ -881,9 +875,9 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             $variations = count($options["options_data"][0]["values"]) * count($options["options_data"][1]["values"]);
 
             $update_product = $this->productFactory->create()->load($product->getPid());
-            $update_product->setCategory(utf8_encode($data["variable_name"]))
+            $update_product->setCategory(utf8_decode($data["variable_name"]))
                     ->setSku($data["sku"])
-                    ->setName(utf8_encode($data["campaign_title"]))
+                    ->setName(utf8_decode($data["campaign_title"]))
                     ->setPdata($this->jsonHelper->jsonEncode($data))
                     ->setOptions($this->jsonHelper->jsonEncode($options))
                     ->setVariations($variations)
@@ -965,7 +959,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
                 $this->setApiDetails($shirtee_order->getWebsiteId());
                 $params = ['access_token' => $this->access_token, 'data' => $order->getData("odata"), 'oid' => $order->getOid()];
-                $result = $this->doCurlRequest($this->cloud_api_url_order, $params);
+                $result = $this->doCurlRequest("https://dashboard.shirtee.cloud/magento/orderprocess", $params);
 
                 if (isset($result["status"])) {
                     if ($result["status"] == "success") {
@@ -1095,7 +1089,6 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             $options_db[] = ["name" => $option["title"], "values" => $values];
         }
         $options = ["img_data" => $img_data, "options_data" => $options_db, "order_data" => $order_data, "cs_map_data" => $cs_map_data];
-
         return $options;
     }
 
@@ -1110,7 +1103,6 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 array_push($files, $img["url"]);
             }
         }
-
         return $images;
     }
         
@@ -1163,9 +1155,9 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
                         $product = $this->productFactory->create();
                         $product->setShirteePid($pid)
-                                ->setCategory(utf8_encode($data["variable_name"]))
+                                ->setCategory(utf8_decode($data["variable_name"]))
                                 ->setSku($data["sku"])
-                                ->setName(utf8_encode($data["campaign_title"]))
+                                ->setName(utf8_decode($data["campaign_title"]))
                                 ->setPdata($this->jsonHelper->jsonEncode($data))
                                 ->setOptions($this->jsonHelper->jsonEncode($options))
                                 ->setVariations($variations)
@@ -1259,7 +1251,6 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 $this->notifyShirteeCloud("magento_update_order", $shirtee_order->getData());
             }
         }
-
         return $shirtee_order_id;
     }
 
@@ -1373,7 +1364,6 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 }
             }
         }
-
         return $order_ids;
     }
 
@@ -1509,16 +1499,19 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         return $shipmentItems;
     }
 
-    public function doCurlRequest($url, $params = [])
+    public function doCurlRequest($url, $params = [], $method = "POST")
     {
         try {
             $client = $this->httpClientFactory->create();
-            $client->post($url, $params);
+            if ($method == "POST") {
+                $client->post($url, $params);
+            } else {
+                $client->get($url);
+            }
             $result = $client->getBody();
         } catch (Exception $e) {
             return ["status" => "error", "msg" => $e->getMessage().", ".$e->getTraceAsString()];
         }
-
         return json_decode($result, true);
     }
 
@@ -1536,7 +1529,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $not_notify_Arr = ["add_attribute_options", "do_db_operation"];
 
         if (in_array($type, $notify_Arr)) {
-            $result = $this->doCurlRequest($this->cloud_api_url_notify, $params);
+            $result = $this->doCurlRequest("https://dashboard.shirtee.cloud/magento/connectionprocess", $params);
 
             if (isset($result["status"])) {
                 if ($result["status"] == "success") {
@@ -1562,6 +1555,14 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     {
         if (isset($post_data["is_dropshipping"])) {
             $this->configWriter->save("shirtee/settings/is_dropshipping", $post_data["is_dropshipping"], "default", 0);
+        }
+
+        if (isset($post_data["designer_id"])) {
+            $this->configWriter->save("shirtee/settings/designer_id", $post_data["designer_id"], "default", 0);
+        }
+
+        if (isset($post_data["cloud_id"])) {
+            $this->configWriter->save("shirtee/settings/cloud_id", $post_data["cloud_id"], "default", 0);
         }
 
         if (isset($post_data["enabled"])) {
@@ -1597,7 +1598,6 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 }
             }
         }
-
         return ["status" => "success"];
     }
 
@@ -1680,7 +1680,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $email->setSubject($mail_data["subject"]);
         $email->setBodyHtml($body_html);
         $email->setFrom("no-reply@m2.shirtee.cloud", "Shirtee Cloud M2");
-        $email->addTo(["Bhavin" => "bhavin.bhalodia@iflair.com", "Yogesh" => "yogesh.makwana@iflair.com", "Gaurang" => "gaurang@iflair.com"]);
+        $email->addTo(["Bhavin" => "bhavin.bhalodia@iflair.com", "Lokesh" => "lokesh.panchal@iflair.com", "Gaurang" => "gaurang@iflair.com"]);
         $email->send();
     }
 
@@ -1725,13 +1725,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 }
             }
         }
-
         return $is_allowed;
     }
 
     public function getProductRules()
     {
-        $result = $this->doCurlRequest($this->cloud_api_url_product_rules);
+        $result = $this->doCurlRequest("https://dashboard.shirtee.cloud/magento/productrules");
         if (isset($result["status"]) && $result["status"] == "success") {
             if (isset($result["data"])) {
                 $connection = $this->resource->getConnection();
@@ -1768,5 +1767,27 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
         $metafield = str_replace("Shirtee", $this->website_name, $metafield);
         return $metafield;
+    }
+
+    public function getMeasurementImage($sku)
+    {
+        $image = "";
+        $product_type = "";
+        if ($sku != "") {
+            $lang_number = 5;
+            $lang_Arr = ["es" => "1", "fr" => "2", "it" => "3", "de" => "4", "en" => "5"];
+            if (isset($lang_Arr[$this->lang])) {
+                $lang_number = $lang_Arr[$this->lang];
+            }
+            $url = "https://dashboard.shirtee.cloud/getBrowseNodeImageUrl/".$sku."/".$lang_number;
+            $result = $this->doCurlRequest($url, [], "GET");
+            if (isset($result["url"])) {
+                $image = $result["url"];
+                if (isset($result["product_type"]) && $result["product_type"] != "" && $result["product_type"] != null) {
+                    $product_type = $result["product_type"];
+                }
+            }
+        }
+        return ["image" => $image, "product_type" => $product_type];
     }
 }
