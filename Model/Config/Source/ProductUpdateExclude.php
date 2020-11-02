@@ -9,6 +9,7 @@ class ProductUpdateExclude implements \Magento\Framework\Option\ArrayInterface
     public function toOptionArray()
     {
         return [
+            ['value' => 'no', 'label' => __('No')],
             ['value' => 'name', 'label' => __('Name')],
             ['value' => 'short_description', 'label' => __('Short Description')],
             ['value' => 'description', 'label' => __('Description')],

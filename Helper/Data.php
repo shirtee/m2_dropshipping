@@ -52,6 +52,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public $lang;
     public $access_token;
     public $product_update_exclude;
+    public $is_product_custom_info;
     public $cron_limit = 1;
 
     public $productFactory;
@@ -226,6 +227,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 $designer_id = $this->scopeConfig->getValue('shirtee/settings/designer_id');
                 $cloud_id = $this->scopeConfig->getValue('shirtee/settings/cloud_id');
                 $product_update_exclude = $this->scopeConfig->getValue('shirtee/settings/product_update_exclude');
+                $is_product_custom_info = $this->scopeConfig->getValue('shirtee/settings/is_product_custom_info');
 
                 $this->cid = $cid;
                 $this->lang = $lang;
@@ -234,6 +236,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 $this->designer_id = $designer_id;
                 $this->cloud_id = $cloud_id;
                 $this->product_update_exclude = $product_update_exclude;
+                $this->is_product_custom_info = $is_product_custom_info;
                 $this->website_name = $this->storeManager->getWebsite($this->website)->getName();
                 $this->website_url = $this->scopeConfig->getValue('web/secure/base_url', \Magento\Store\Model\ScopeInterface::SCOPE_WEBSITE, $this->website);
 
@@ -524,6 +527,15 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             $options = json_decode($product->getOptions(), true);
             $images = json_decode($product->getImages(), true);
 
+            $data["description"] = str_replace("Produktdetails:", "<br/>Produktdetails:", $data["description"]);
+            if ($data["material"] != '') {
+                $data["description"] = $data["description"]."<br/>".$data["material"];
+            }
+
+            if ($this->is_product_custom_info == "1") {
+                $data = $this->processProductCustomInfo($data);
+            }
+
             $meta_title = $this->processWebsiteMetaDetails($data["meta_title"]);
             $meta_description = $this->processWebsiteMetaDetails($data["meta_description"]);
 
@@ -717,9 +729,18 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                     $_img["src"] = $this->getImageUrl($_img["src"]);
                     $this->uploadImageToMediaGallery($prd_configurable, $_img["src"], $imageType);
                 }
-                $m_image = $this->getMeasurementImage($data["sku"]);
-                if ($m_image["image"] != "") {
-                    $this->uploadImageToMediaGallery($prd_configurable, $m_image["image"]);
+
+                $m_image = "";
+                if (isset($data["cc_m_image"])) {
+                    $m_image = $data["cc_m_image"];
+                } else {
+                    $m_image = $this->getMeasurementImage($data["sku"]);
+                    if ($m_image["image"] != "") {
+                        $m_image = $m_image["image"];
+                    }
+                }
+                if($m_image != "") {
+                    $this->uploadImageToMediaGallery($prd_configurable, $m_image);
                 }
             }
 
@@ -1581,6 +1602,10 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             $this->configWriter->save("shirtee/settings/product_update_exclude", $post_data["product_update_exclude"], "default", 0);
         }
 
+        if (isset($post_data["is_product_custom_info"])) {
+            $this->configWriter->save("shirtee/settings/is_product_custom_info", $post_data["is_product_custom_info"], "default", 0);
+        }
+
         if (isset($post_data["website_id"]) && isset($post_data["access_token"])) {
             $website_id = $post_data["website_id"];
             $access_token = $post_data["access_token"];
@@ -1789,5 +1814,55 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             }
         }
         return ["image" => $image, "product_type" => $product_type];
+    }
+
+    public function getProductCustomInfoByDesigner($sku)
+    {
+        $url = "https://dashboard.shirtee.cloud/APIgetProductCustomDetails";
+        $params = ['designer_id' => $this->cloud_id, 'sku' => $sku];
+        $result = $this->doCurlRequest($url, $params);
+        foreach ($result["data"] as $key => $val) {
+            $result["data"][$key] = html_entity_decode(utf8_decode($val));
+        }
+        $this->doDebug(["type" => "M2_productCustomInfo", "ldata" => ["request" => $params, "response" => $result], "status" => 1, "error" => ""]);
+        return $result;
+    }
+
+    public function processProductCustomInfo($data)
+    {
+        $sku = explode("_", $data["sku"]);
+        $custom_info = $this->getProductCustomInfoByDesigner($sku[1]);
+        if (isset($custom_info["status"]) && isset($custom_info["data"])) {
+            if ($custom_info["status"] == "1") {
+                $org_title = explode(" - ", $data["campaign_title"]);
+                if (isset($custom_info["data"]["product_title"]) && $custom_info["data"]["product_title"] != "") {
+                    if (count($org_title) == 2) {
+                        $product_title = $custom_info["data"]["product_title"];
+                        $product_title = str_replace("[design_title]", $org_title[0], $product_title);
+                        $product_title = str_replace("[product_type]", $org_title[1], $product_title);
+                        $data["campaign_title"] = $product_title;
+                    }
+                }
+                if (isset($custom_info["data"]["meta_title"]) && $custom_info["data"]["meta_title"] != "") {
+                    $data["meta_title"] = str_replace("[design_title]", $org_title[0], $custom_info["data"]["meta_title"]);
+                }
+                if (isset($custom_info["data"]["meta_description"]) && $custom_info["data"]["meta_description"] != "") {
+                    $data["meta_description"] = strip_tags(str_replace("[design_title]", $org_title[0], $custom_info["data"]["meta_description"]));
+                }
+                if (isset($custom_info["data"]["keywords"]) && $custom_info["data"]["keywords"] != "") {
+                    $data["tags"] = $custom_info["data"]["keywords"];
+                }
+                if (isset($custom_info["data"]["product_short_description"]) && $custom_info["data"]["product_short_description"] != "") {
+                    $data["short_description"] = $custom_info["data"]["product_short_description"];
+                }
+                if (isset($custom_info["data"]["product_description"]) && $custom_info["data"]["product_description"] != "") {
+                    $data["description"] = $custom_info["data"]["product_description"];
+                }
+                if (isset($custom_info["data"]["measurement_image"]) && $custom_info["data"]["measurement_image"] != "") {
+                    $data["cc_m_image"] = "https://dashboard.shirtee.cloud/designer_measurement_image/".$custom_info["data"]["measurement_image"];
+                }
+            }
+        }
+        return $data;
     }
 }

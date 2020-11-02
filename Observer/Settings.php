@@ -79,6 +79,14 @@ class Settings implements ObserverInterface
             $post_data["cloud_id"] = $cloud_id;
         }
 
+        $is_product_custom_info = $this->scopeConfig->getValue('shirtee/settings/is_product_custom_info');
+        if ($is_product_custom_info == "") {
+            $this->shirteeHelper->configWriter->save("shirtee/settings/is_product_custom_info", 0, "default", 0);
+            $post_data["is_product_custom_info"] = 0;
+        } else {
+            $post_data["is_product_custom_info"] = $is_product_custom_info;
+        }
+
         $this->shirteeHelper->notifyShirteeCloud("do_settings", $post_data);
     }
 }
