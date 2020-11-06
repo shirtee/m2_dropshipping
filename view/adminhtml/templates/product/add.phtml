@@ -1,0 +1,18 @@
+<?php
+/**
+ * Copyright © Shirtee. All rights reserved.
+ */
+?>
+<?php
+$key = $block->shirteeHelper->getDropShippingAddProductKey();
+?>
+<div>
+	<iframe id="add_product" src="https://print-on-demand.cloud/en/designer/iframe?key=<?php echo $key; ?>" sandbox="allow-top-navigation allow-same-origin allow-scripts" scrolling="no"></iframe>
+</div>
+<script type="text/javascript">
+require(['jquery', 'Shirtee_Dropshipping/js/iframe'], function ($, iFrameResize) {
+    $(document).ready(function(){
+    	iFrameResize({log:true, minHeight:808});
+	});
+});
+</script>

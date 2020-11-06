@@ -60,3 +60,8 @@
 .process_img {
     text-align: center;
 }
+#add_product {
+    margin: 0;
+    border: 0;
+    width: 100%;
+}

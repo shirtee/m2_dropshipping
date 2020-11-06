@@ -1865,4 +1865,16 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         }
         return $data;
     }
+
+    public function getDropShippingAddProductKey($pid = "")
+    {
+        $designer_id = $this->designer_id * 14121992 + 19091992;
+        $cid = $this->cid * 14121992 + 19091992;
+        $key = 'di='.$designer_id.'&category_id='.$cid.'&var='.time();
+        if ($pid != "") {
+            $pid = $pid * 14121992 + 19091992;
+            $key.= '&id='.$pid;
+        }
+        return base64_encode($key);
+    }
 }
