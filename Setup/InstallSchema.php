@@ -19,6 +19,7 @@ class InstallSchema implements InstallSchemaInterface
     const CRON_CREATE_PRODUCT_TABLE = 'shirtee_cron_create_product';
     const CRON_MODIFY_PRODUCT_TABLE = 'shirtee_cron_modify_product';
     const CRON_REMOVE_PRODUCT_TABLE = 'shirtee_cron_remove_product';
+    const CRON_PRODUCT_RULE_TABLE = 'shirtee_cron_product_rules';
 
     //Order tables
     const ORDER_TABLE = 'shirtee_orders';
@@ -64,6 +65,11 @@ class InstallSchema implements InstallSchemaInterface
         $tableName = $installer->getTable(self::CRON_REMOVE_PRODUCT_TABLE);
         $this->dropTableIfExists($installer, $tableName);
         $this->createCronRemoveProductTable($installer, self::CRON_REMOVE_PRODUCT_TABLE);
+
+        //Cron product rule table
+        $tableName = $installer->getTable(self::CRON_PRODUCT_RULE_TABLE);
+        $this->dropTableIfExists($installer, $tableName);
+        $this->createCronProductRuleTable($installer, self::CRON_PRODUCT_RULE_TABLE);
 
         //Main order table
         $tableName = $installer->getTable(self::ORDER_TABLE);
@@ -642,6 +648,112 @@ class InstallSchema implements InstallSchemaInterface
                 $setup->getIdxName($tableName, ['pid']),
                 ['pid'],
                 ['type' => \Magento\Framework\DB\Adapter\Pdo\Mysql::INDEX_TYPE_UNIQUE]
+            );
+        $setup->getConnection()->createTable($table);
+    }
+
+    private function createCronProductRuleTable(SchemaSetupInterface $setup, $tableName)
+    {
+        $table = $setup->getConnection()->newTable($tableName);
+        $table->setComment('Shirtee Cron Product Rule Table');
+
+        $table
+            ->addColumn(
+                'scprid',
+                Table::TYPE_INTEGER,
+                null,
+                [
+                    'primary' => true,
+                    'identity' => true,
+                    'nullable' => false,
+                    'unsigned' => true,
+                ],
+                'Cron ID'
+            )->addColumn(
+                'pid',
+                Table::TYPE_INTEGER,
+                null,
+                [
+                    'unsigned' => true,
+                    'nullable' => true
+                ],
+                'Product ID'
+            )->addColumn(
+                'sku',
+                Table::TYPE_TEXT,
+                255,
+                [
+                    'nullable' => true
+                ],
+                'SKU'
+            )->addColumn(
+                'rule_type',
+                Table::TYPE_TEXT,
+                255,
+                [
+                    'nullable' => true
+                ],
+                'Rule Type'
+            )->addColumn(
+                'size',
+                Table::TYPE_TEXT,
+                255,
+                [
+                    'nullable' => true
+                ],
+                'Size'
+            )->addColumn(
+                'color',
+                Table::TYPE_TEXT,
+                255,
+                [
+                    'nullable' => true
+                ],
+                'Color'
+            )->addColumn(
+                'status',
+                Table::TYPE_SMALLINT,
+                null,
+                [
+                    'unsigned' => true,
+                    'nullable' => true,
+                    'default' => 0
+                ],
+                'Cron Status'
+            )->addColumn(
+                'error',
+                Table::TYPE_TEXT,
+                255,
+                [
+                    'nullable' => true
+                ],
+                'Cron Error'
+            )->addColumn(
+                'full_log',
+                Table::TYPE_TEXT,
+                null,
+                [
+                    'nullable' => true
+                ],
+                'Full Log'
+            )->addColumn(
+                'created_at',
+                Table::TYPE_TIMESTAMP,
+                null,
+                [
+                    'nullable' => false,
+                    'default' => Table::TIMESTAMP_INIT
+                ],
+                'Creation Time'
+            )->addColumn(
+                'updated_at',
+                Table::TYPE_TIMESTAMP,
+                null,
+                [
+                    'nullable' => false,
+                    'default' => Table::TIMESTAMP_INIT_UPDATE
+                ],
+                'Update Time'
             );
         $setup->getConnection()->createTable($table);
     }

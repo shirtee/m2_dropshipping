@@ -38,6 +38,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public $storeManager;
     public $session;
     public $moduleList;
+    public $linkManagement;
 
     public $designer_id;
     public $cloud_id;
@@ -67,6 +68,8 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public $cronModifyProductCollectionFactory;
     public $cronRemoveProductFactory;
     public $cronRemoveProductCollectionFactory;
+    public $cronProductRuleFactory;
+    public $cronProductRuleCollectionFactory;
     public $orderFactory;
     public $orderCollectionFactory;
     public $logFactory;
@@ -106,6 +109,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         \Magento\Store\Model\StoreManagerInterface $storeManager,
         \Magento\Backend\Model\Session $session,
         \Magento\Framework\Module\ModuleListInterface $moduleList,
+        \Magento\ConfigurableProduct\Model\LinkManagement $linkManagement,
         \Shirtee\Dropshipping\Model\ProductFactory $productFactory,
         \Shirtee\Dropshipping\Model\ResourceModel\Product\CollectionFactory $productCollectionFactory,
         \Shirtee\Dropshipping\Model\ProductRuleFactory $productRuleFactory,
@@ -118,6 +122,8 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         \Shirtee\Dropshipping\Model\ResourceModel\CronModifyProduct\CollectionFactory $cronModifyProductCollectionFactory,
         \Shirtee\Dropshipping\Model\CronRemoveProductFactory $cronRemoveProductFactory,
         \Shirtee\Dropshipping\Model\ResourceModel\CronRemoveProduct\CollectionFactory $cronRemoveProductCollectionFactory,
+        \Shirtee\Dropshipping\Model\CronProductRuleFactory $cronProductRuleFactory,
+        \Shirtee\Dropshipping\Model\ResourceModel\CronProductRule\CollectionFactory $cronProductRuleCollectionFactory,
         \Shirtee\Dropshipping\Model\OrderFactory $orderFactory,
         \Shirtee\Dropshipping\Model\ResourceModel\Order\CollectionFactory $orderCollectionFactory,
         \Shirtee\Dropshipping\Model\LogFactory $logFactory,
@@ -157,6 +163,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $this->storeManager = $storeManager;
         $this->session = $session;
         $this->moduleList = $moduleList;
+        $this->linkManagement = $linkManagement;
 
         $this->productFactory = $productFactory;
         $this->productCollectionFactory = $productCollectionFactory;
@@ -170,6 +177,8 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $this->cronModifyProductCollectionFactory = $cronModifyProductCollectionFactory;
         $this->cronRemoveProductFactory = $cronRemoveProductFactory;
         $this->cronRemoveProductCollectionFactory = $cronRemoveProductCollectionFactory;
+        $this->cronProductRuleFactory = $cronProductRuleFactory;
+        $this->cronProductRuleCollectionFactory = $cronProductRuleCollectionFactory;
         $this->orderFactory = $orderFactory;
         $this->orderCollectionFactory = $orderCollectionFactory;
         $this->logFactory = $logFactory;
@@ -305,6 +314,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function getProductImagesById($product_id)
     {
         $result = $this->callShirteeApi('getProductImagesById', [$product_id, $this->lang]);
+        return $result;
+    }
+
+    public function getProductIdsByCampaignId($campaignID)
+    {
+        $result = $this->callShirteeApi('getProductIdsByCampaignId', $campaignID);
         return $result;
     }
 
@@ -542,7 +557,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             if ($type == "create") {
                 $prd_configurable = $this->product->create();
             } elseif ($type == "update") {
-                $prd_configurable = $this->productRepository->get($data["sku"]);
+                $prd_configurable = $this->productRepository->get($data["sku"], false, 0);
                 if (!in_array("images", $product_update_exclude)) {
                     $prd_configurable->setMediaGalleryEntries([])
                                      ->save();
@@ -567,35 +582,36 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             $attributeValues_sizes = [];
             $associatedProductIds = [];
 
-            $img_data = array_flip($options["img_data"]);
-            $order_data = $options["order_data"];
+            $img_data = $options["img_data"];
+            $order_data = array_flip($options["order_data"]);
             $cs_map_data = $options["cs_map_data"];
-            $options = $options["options_data"];
-            
-            foreach ($options[0]["values"] as $ckey => $color) {
-                foreach ($options[1]["values"] as $skey => $size) {
-                    $temp_sku = explode("_", $data["sku"]);
-                    $temp_color = $img_data[$color];
-                    $temp_size = $img_data[$size];
+
+            //can you please use the fist Color in media list as "Default" Color please!
+            $tmp_color_codes = [];
+            foreach ($images as $tmkey => $_timg) {
+                $tmp_color_codes[] = $_timg["code"];
+            }
+            if(count($cs_map_data["colors"]) == count($tmp_color_codes)) {
+                $cs_map_data["colors"] = array_replace(array_flip($tmp_color_codes), $cs_map_data["colors"]);
+            }
+            //end
+
+            $temp_sku = explode("_", $data["sku"]);
+            foreach($cs_map_data["colors"] as $color_code => $sizes) {
+                foreach($sizes as $skey => $size_id) {
+                    $size_code = $order_data[$size_id];
 
                     if (isset($temp_sku[1])) {
-                        $is_allowed = $this->checkColorSizeAllowed($temp_sku[1], $temp_color, $temp_size);
+                        $is_allowed = $this->checkColorSizeAllowed($temp_sku[1], $color_code, $size_code);
                         if ($is_allowed == "0") {
                             continue;
                         }
                     }
-                    if (isset($cs_map_data["colors"][$temp_color])) {
-                        if (!in_array($order_data[$temp_size], $cs_map_data["colors"][$temp_color])) {
-                            continue;
-                        }
-                    }
-                    if (isset($cs_map_data["sizes"][$temp_size])) {
-                        if (!in_array($temp_color, $cs_map_data["sizes"][$temp_size])) {
-                            continue;
-                        }
-                    }
 
-                    $simple_sku = $data["sku"]."__".$temp_size."__".$temp_color;
+                    $color = $img_data[$color_code];
+                    $size = $img_data[$size_code];
+
+                    $simple_sku = $data["sku"]."__".$size_code."__".$color_code;
                     $simple_name = $data["campaign_title"]." - ".$color." - ".$size;
 
                     $simple_url_key = preg_replace('/[^a-zA-Z0-9-]/', '', str_replace(" ", "-", strtolower($data["campaign_title"]."-".$color."-".$size)));
@@ -606,7 +622,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                         $prd_simple = $this->product->create();
                     } elseif ($type == "update") {
                         if (in_array($simple_sku, $child_products)) {
-                            $prd_simple = $this->productRepository->get($simple_sku);
+                            $prd_simple = $this->productRepository->get($simple_sku, false, 0);
 
                             array_push($child_products_updated, $simple_sku);
                         } else {
@@ -1044,7 +1060,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 foreach ($products_collection as $product) {
                     $cron_id = $scrpid_Arr[$product->getPid()];
                     try {
-                        $prd_configurable = $this->productRepository->get($product->getSku());
+                        $prd_configurable = $this->productRepository->get($product->getSku(), false, 0);
                         $_childrens = $prd_configurable->getTypeInstance()->getUsedProducts($prd_configurable);
                         foreach ($_childrens as $child) {
                             $this->productRepository->deleteById($child->getSku());
@@ -1120,7 +1136,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $files = [];
         foreach ($prd_img as $ikey => $img) {
             if (!in_array($img["url"], $files)) {
-                $images[] = ["src" => $img["url"], "alt" => isset($img_data[$img["label"]]) ? $img_data[$img["label"]] : ""];
+                $images[] = ["src" => $img["url"], "alt" => isset($img_data[$img["label"]]) ? $img_data[$img["label"]] : "", "code" => $img["label"]];
                 array_push($files, $img["url"]);
             }
         }
@@ -1227,12 +1243,19 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $items_data = [];
         $other_items_data = [];
 
+        $is_warehouse = 0;
+        $warehouse_items = [];
+
         foreach ($order->getAllItems() as $item) {
-            if ($item->getProductType() == "configurable") {
+            if ($item->getParentItemId() == null) {
                 $product = $this->product->create()->load($item->getProductId());
 
                 if ($product->getIsShirtee()) {
                     $items_data[$item->getSku()] = $item->getData();
+                    if (strtoupper(substr($item->getSku(), 0, 4)) == "SWP_") {
+                        $is_warehouse = 1;
+                        $warehouse_items[] = $item->getSku();
+                    }
                 } else {
                     $is_partial = 1;
                     $other_items_data[$item->getSku()] = $item->getData();
@@ -1250,9 +1273,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
             $odata = ["order_data" => $order_data, "billing_data" => $billing_data, "shipping_data" => $shipping_data, "items_data" => $items_data, "other_items_data" => $other_items_data];
 
+            $shirtee_status = "pending";
             $shirtee_order = $this->orderFactory->create()->load($order->getIncrementId(), 'magento_oid');
             if (!$shirtee_order->getId()) {
                 $shirtee_order_id = true;
+            } else {
+                $shirtee_status = $shirtee_order->getShirteeStatus();
             }
             $shirtee_order->setMagentoOid($order->getIncrementId())
                           ->setOrderDate($this->dateTime->gmtTimestamp($order->getCreatedAt()))
@@ -1260,8 +1286,10 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                           ->setOrderTotal($order->getGrandTotal())
                           ->setOrderCurrency($order->getOrderCurrencyCode())
                           ->setOrderStatus($order->getStatus())
-                          ->setShirteeStatus("pending")
+                          ->setShirteeStatus($shirtee_status)
                           ->setIsPartial($is_partial)
+                          ->setIsWarehouse($is_warehouse)
+                          ->setWarehouseItems($this->jsonHelper->jsonEncode($warehouse_items))
                           ->setOdata($this->jsonHelper->jsonEncode($odata))
                           ->setWebsiteId($website_id)
                           ->save();
@@ -1876,5 +1904,208 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             $key.= '&id='.$pid;
         }
         return base64_encode($key);
+    }
+
+    public function notifyAddDsProduct($post_data)
+    {
+        if (isset($post_data["campaignID"]) && isset($post_data["designerID"]) && isset($post_data["webSiteId"]) && isset($post_data["categoryID"])) {
+            if ($post_data["campaignID"] != "" && $post_data["designerID"] != "" && $post_data["webSiteId"] != "" && $post_data["categoryID"] != "") {
+                $this->setApiDetails($post_data["webSiteId"]);
+                if ($this->designer_id == $post_data["designerID"] && $this->cid == $post_data["categoryID"] && $this->is_dropshipping == "1") {
+                    $new_Arr = [];
+                    $result = $this->getProductIdsByCampaignId($post_data["campaignID"]);
+                    if (isset($result["category_id"]) && isset($result["product_ids"])) {
+                        if (count($result["product_ids"]) > 0) {
+                            foreach ($result["product_ids"] as $key => $pid) {
+                                $cron_product_collection = $this->cronProductCollectionFactory->create()->addFieldToFilter("shirtee_pid", $pid)->addFieldToFilter("website_id", $post_data["webSiteId"]);
+                                if (!$cron_product_collection->count()) {
+                                    $cron_product = $this->cronProductFactory->create();
+                                    $cron_product->setShirteePid($pid);
+                                    $cron_product->setWebsiteId($post_data["webSiteId"]);
+                                    $cron_product->save();
+                                    array_push($new_Arr, $pid);
+                                }
+                            }
+                            if (count($new_Arr) > 0) {
+                                $this->notifyShirteeCloud("cron_get_products", $new_Arr);
+                            }
+                        }
+                    }
+                    return ["status" => "success", "data" => $new_Arr];
+                } else {
+                    return ["status" => "error", "msg" => "Something Wrong!"];
+                }
+            }
+        }
+    }
+
+    public function cronProductRules()
+    {
+        $scprid_collection = $this->cronProductRuleCollectionFactory->create()->addFieldToFilter("status", "0")->addFieldToSelect(["scprid", "pid", "rule_type", "size", "color"])->setPageSize($this->cron_limit);
+        if ($scprid_collection->count()) {
+            $connection = $this->resource->getConnection();
+            $scprid_Arr = [];
+            foreach ($scprid_collection as $product) {
+                array_push($scprid_Arr, $product->getScprid());
+            }
+            //Change status to processing
+            $connection->update(
+                $connection->getTableName('shirtee_cron_product_rules'),
+                ['status' => 3],
+                ['scprid IN(?)' => $scprid_Arr]
+            );
+            foreach ($scprid_collection as $product) {
+                $status = 1;
+                $msg = null;
+                $full_log = ["update_sku" => [], "new_sku" => []];
+                $rule_type = $product->getRuleType();
+                $size_Arr = explode(",", $product->getSize());
+                $color_Arr = explode(",", $product->getColor());
+
+                try {
+                    $shirtee_product = $this->productFactory->create()->load($product->getPid());
+                    if ($shirtee_product->getId()) {
+                        $curr_Size = [];
+                        $sku = $shirtee_product->getSku();
+                        $mage_pid = $shirtee_product->getMagePid();
+                        $options = json_decode($shirtee_product->getOptions(), true);
+
+                        if ($mage_pid != "") {
+                            $duplicate = "";
+                            $prd_configurable = $this->productRepository->get($sku, false, 0);
+                            $_childrens = $prd_configurable->getTypeInstance()->getUsedProducts($prd_configurable);
+                            foreach ($_childrens as $child) {
+                                $temp_sku = explode("__", $child->getSku());
+                                if (($rule_type == "add" || in_array($temp_sku[1], $size_Arr)) && in_array($temp_sku[2], $color_Arr)) {
+                                    //copy duplicate
+                                    $duplicate = $child;
+                                    //get sizes
+                                    array_push($curr_Size, $temp_sku[1]);
+
+                                    //for out of stock
+                                    if ($rule_type == "block") {
+                                        $full_log["update_sku"][] = $child->getSku();
+                                        $prd_simple = $this->productRepository->get($child->getSku(), false, 0);
+                                        $prd_simple->setStockData(['manage_stock' => 1, 'is_in_stock' => 0, 'qty' => 0]);
+                                        $this->productRepository->save($prd_simple);
+                                    }
+                                    //for in stock
+                                    if ($rule_type == "add") {
+                                        if (in_array($temp_sku[1], $size_Arr)) {
+                                            $full_log["update_sku"][] = $child->getSku();
+                                            $prd_simple = $this->productRepository->get($child->getSku(), false, 0);
+                                            $prd_simple->setStockData(['manage_stock' => 0, 'is_in_stock' => 1]);
+                                            $this->productRepository->save($prd_simple);
+                                        }
+                                    }
+                                }
+                            }
+                            //create new variant if not found
+                            if ($rule_type == "add") {
+                                $missing_sizes = array_diff($size_Arr, $curr_Size);
+                                if (count($missing_sizes) > 0 && $duplicate->getSku()) {
+                                    //get color
+                                    $temp_sku = explode("__", $duplicate->getSku());
+                                    $color = $temp_sku[2];
+
+                                    foreach ($missing_sizes as $mskey => $msize) {
+                                        $simple_sku = $sku."__".$msize."__".$color;
+                                        $simple_name = $prd_configurable->getName()." - ".$options["img_data"][$color]." - ".$options["img_data"][$msize];
+
+                                        $simple_url_key = preg_replace('/[^a-zA-Z0-9-]/', '', str_replace(" ", "-", strtolower($prd_configurable->getName()."-".$options["img_data"][$color]."-".$options["img_data"][$msize])));
+                                        $simple_url_key = str_replace("--", "-", $simple_url_key);
+                                        $simple_url_key = str_replace("--", "-", $simple_url_key);
+
+                                        //color
+                                        $color_data = $this->getAttribute("shirtee_color");
+                                        //size
+                                        $size_data = $this->getAttribute("shirtee_size");
+
+                                        try {
+                                            $prd_simple = $this->productRepository->get($simple_sku, false, 0);
+                                            $prd_simple->setStockData(['manage_stock' => 0, 'is_in_stock' => 1]);
+                                            $this->productRepository->save($prd_simple);
+                                            $full_log["update_sku"][] = $simple_sku;
+                                        } catch(\Magento\Framework\Exception\NoSuchEntityException $e) {
+                                            $prd_simple = $this->product->create();
+                                            $prd_simple->setTypeId($this->productType::TYPE_SIMPLE)
+                                                       ->setAttributeSetId($this->getDefaultAttributeSetId())
+                                                       ->setWebsiteIds($prd_configurable->getWebsiteIds())
+                                                       ->setIsShirtee(1)
+                                                       ->setName($simple_name)
+                                                       ->setSku($simple_sku)
+                                                       ->setShortDescription($prd_configurable->getShortDescription())
+                                                       ->setDescription($prd_configurable->getDescription())
+                                                       ->setMetaTitle($prd_configurable->getMetaTitle())
+                                                       ->setMetaDescription($prd_configurable->getMetaDescription())
+                                                       ->setMetaKeyword($prd_configurable->getMetaKeyword())
+                                                       ->setWeight($prd_configurable->getWeight())
+                                                       ->setUrlKey($simple_url_key)
+                                                       ->setPrice($duplicate->getPrice())
+                                                       ->setSpecialPrice($duplicate->getSpecialPrice())
+                                                       ->setCost($duplicate->getCost())
+                                                       ->setShirteeColor($color_data["options"][$options["img_data"][$color]])
+                                                       ->setShirteeSize($size_data["options"][$options["img_data"][$msize]])
+                                                       ->setVisibility($this->productVisibility::VISIBILITY_NOT_VISIBLE)
+                                                       ->setStatus($this->productAttributeSourceStatus::STATUS_ENABLED)
+                                                       ->setStockData(['use_config_manage_stock' => 0, 'manage_stock' => 0, 'is_in_stock' => 1]);
+                                            $prd_simple = $this->productRepository->save($prd_simple);
+                                            $this->linkManagement->addChild($sku, $simple_sku);
+                                            $full_log["new_sku"][] = $simple_sku;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception $e) {
+                    $status = 2;
+                    $msg = $e->getMessage();
+                }
+
+                $scrp = $this->cronProductRuleFactory->create()->load($product->getScprid());
+                $scrp->setStatus($status)
+                     ->setError($msg)
+                     ->setFullLog($this->jsonHelper->jsonEncode($full_log))
+                     ->save();
+            }
+            //Change status to again pending if any not process
+            $connection->update(
+                $connection->getTableName('shirtee_cron_product_rules'),
+                ['status' => 0],
+                ['scprid IN(?)' => $scprid_Arr, 'status IN(?)' => [3]]
+            );
+        }
+    }
+
+    public function addStockRule($post_data)
+    {
+        if (isset($post_data["rule_type"]) && isset($post_data["sku"]) && isset($post_data["color"]) && isset($post_data["size"])) {
+            $rule_type = $post_data["rule_type"];
+            $sku = $post_data["sku"];
+            $color = $post_data["color"];
+            $size = $post_data["size"];
+
+            $products_collection = $this->productCollectionFactory->create()->addFieldToSelect("pid")->addFieldToFilter("sku", [["like" => "%_".$sku.""]])->addFieldToFilter("options", [["like" => "%\"".$color."\":\"%"]])->addFieldToFilter("status", "1");
+            if ($products_collection->count()) {
+                foreach ($products_collection as $product) {
+                    $pid = $product->getPid();
+
+                    $rules_collection = $this->cronProductRuleCollectionFactory->create()->addFieldToSelect(["pid"])->addFieldToFilter("pid", $pid)->addFieldToFilter("sku", $sku)->addFieldToFilter("rule_type", $rule_type)->addFieldToFilter("color", $color)->addFieldToFilter("size", $size)->addFieldToFilter("status", "0");
+                    if (!$rules_collection->count()) {
+                        $product_rule = $this->cronProductRuleFactory->create();
+                        $product_rule->setPid($pid)
+                                ->setSku($sku)
+                                ->setRuleType($rule_type)
+                                ->setSize($size)
+                                ->setColor($color)
+                                ->save();
+                    }
+                }
+            }
+            return ["status" => "success", "total" => $products_collection->count()];
+        } else {
+            return ["status" => "error", "msg" => "Something Wrong!"];
+        }
     }
 }

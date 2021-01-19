@@ -87,6 +87,14 @@ class Settings implements ObserverInterface
             $post_data["is_product_custom_info"] = $is_product_custom_info;
         }
 
+        $product_update_exclude = $this->scopeConfig->getValue('shirtee/settings/product_update_exclude');
+        if ($product_update_exclude == "") {
+            $this->shirteeHelper->configWriter->save("shirtee/settings/product_update_exclude", "name,short_description,description,images,meta_title,meta_description,meta_keyword", "default", 0);
+            $post_data["product_update_exclude"] = "name,short_description,description,images,meta_title,meta_description,meta_keyword";
+        } else {
+            $post_data["product_update_exclude"] = $product_update_exclude;
+        }
+
         $this->shirteeHelper->notifyShirteeCloud("do_settings", $post_data);
     }
 }

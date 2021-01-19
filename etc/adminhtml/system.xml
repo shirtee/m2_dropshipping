@@ -29,10 +29,10 @@
                 <field id="password" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="0" showInStore="0" canRestore="1">
                     <label>Shirtee Password</label>
                 </field>
-                <field id="product_update_exclude" translate="label" type="multiselect" sortOrder="40" showInDefault="1" showInWebsite="0" showInStore="0" canRestore="1">
+                <!-- <field id="product_update_exclude" translate="label" type="multiselect" sortOrder="40" showInDefault="1" showInWebsite="0" showInStore="0" canRestore="1">
                     <label>Product Update Exclude</label>
                     <source_model>Shirtee\Dropshipping\Model\Config\Source\ProductUpdateExclude</source_model>
-                </field>
+                </field> -->
                 <field id="cid" translate="label" type="text" sortOrder="50" showInDefault="0" showInWebsite="1" showInStore="0" canRestore="1">
                     <label>Shirtee Shop ID</label>
                 </field>
