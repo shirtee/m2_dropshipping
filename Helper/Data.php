@@ -14,7 +14,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public $productType;
     public $productVisibility;
     public $categorySetup;
-    public $productOptionsFactory;
+    public $confiProductOptions;
     public $productTypeConfigurable;
     public $eavConfig;
     public $eavSetup;
@@ -26,13 +26,13 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public $dateTime;
     public $magentoOrderCollection;
     public $orderRepository;
-    public $documentFactory;
+    public $shipmentDocument;
     public $dbTransaction;
     public $shipmentSender;
-    public $trackFactory;
-    public $orderItemFactory;
+    public $shipmentTrackCreation;
+    public $shipmentItemCreation;
     public $configWriter;
-    public $httpClientFactory;
+    public $httpClient;
     public $oauthHelper;
     public $request;
     public $storeManager;
@@ -85,7 +85,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         \Magento\Catalog\Model\Product\Type $productType,
         \Magento\Catalog\Model\Product\Visibility $productVisibility,
         \Magento\Catalog\Setup\CategorySetup $categorySetup,
-        \Magento\ConfigurableProduct\Helper\Product\Options\Factory $productOptionsFactory,
+        \Magento\ConfigurableProduct\Helper\Product\Options\Factory $confiProductOptions,
         \Magento\ConfigurableProduct\Model\Product\Type\Configurable $productTypeConfigurable,
         \Magento\Eav\Model\Config $eavConfig,
         \Magento\Eav\Setup\EavSetupFactory $eavSetup,
@@ -97,13 +97,13 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         \Magento\Framework\Stdlib\DateTime\DateTime $dateTime,
         \Magento\Sales\Model\ResourceModel\Order\CollectionFactory $magentoOrderCollection,
         \Magento\Sales\Api\OrderRepositoryInterface $orderRepository,
-        \Magento\Sales\Model\Order\ShipmentDocumentFactory $documentFactory,
+        \Magento\Sales\Model\Order\ShipmentDocumentFactory $shipmentDocument,
         \Magento\Framework\DB\Transaction $dbTransaction,
         \Magento\Sales\Model\Order\Email\Sender\ShipmentSender $shipmentSender,
-        \Magento\Sales\Api\Data\ShipmentTrackCreationInterfaceFactory $trackFactory,
-        \Magento\Sales\Api\Data\ShipmentItemCreationInterfaceFactory $orderItemFactory,
+        \Magento\Sales\Api\Data\ShipmentTrackCreationInterfaceFactory $shipmentTrackCreation,
+        \Magento\Sales\Api\Data\ShipmentItemCreationInterfaceFactory $shipmentItemCreation,
         \Magento\Framework\App\Config\Storage\WriterInterface $configWriter,
-        \Magento\Framework\HTTP\ClientFactory $httpClientFactory,
+        \Magento\Framework\HTTP\ClientFactory $httpClient,
         \Magento\Framework\Oauth\Helper\Oauth $oauthHelper,
         \Magento\Framework\App\RequestInterface $request,
         \Magento\Store\Model\StoreManagerInterface $storeManager,
@@ -139,7 +139,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $this->productType = $productType;
         $this->productVisibility = $productVisibility;
         $this->categorySetup = $categorySetup;
-        $this->productOptionsFactory = $productOptionsFactory;
+        $this->confiProductOptions = $confiProductOptions;
         $this->productTypeConfigurable = $productTypeConfigurable;
         $this->eavConfig = $eavConfig;
         $this->eavSetup = $eavSetup;
@@ -151,13 +151,13 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $this->dateTime = $dateTime;
         $this->magentoOrderCollection = $magentoOrderCollection;
         $this->orderRepository = $orderRepository;
-        $this->documentFactory = $documentFactory;
+        $this->shipmentDocument = $shipmentDocument;
         $this->dbTransaction = $dbTransaction;
         $this->shipmentSender = $shipmentSender;
-        $this->trackFactory = $trackFactory;
-        $this->orderItemFactory = $orderItemFactory;
+        $this->shipmentTrackCreation = $shipmentTrackCreation;
+        $this->shipmentItemCreation = $shipmentItemCreation;
         $this->configWriter = $configWriter;
-        $this->httpClientFactory = $httpClientFactory;
+        $this->httpClient = $httpClient;
         $this->oauthHelper = $oauthHelper;
         $this->request = $request;
         $this->storeManager = $storeManager;
@@ -339,7 +339,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function getImageUrl($url)
     {
         try {
-            $client = $this->httpClientFactory->create();
+            $client = $this->httpClient->create();
             $client->setOption(CURLOPT_HEADER, true);
             $client->setOption(CURLOPT_FOLLOWLOCATION, false);
             $client->get($url);
@@ -689,7 +689,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                     'values' => $attributeValues_sizes,
                 ]
             ];
-            $configurableOptions = $this->productOptionsFactory->create($configurableAttributesData);
+            $configurableOptions = $this->confiProductOptions->create($configurableAttributesData);
                 
             $extensionConfigurableAttributes = $prd_configurable->getExtensionAttributes();
             $extensionConfigurableAttributes->setConfigurableProductOptions($configurableOptions);
@@ -1440,6 +1440,10 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             $order_id = "";
             $shirtee_order = $this->getOrderById($post_data["shirtee_oid"]);
             if ($shirtee_order->getId()) {
+                if($shirtee_order->getIsFulfilled() == "1") {
+                    return ["status" => "error", "msg" => "This order already fulfilled."];
+                }
+
                 $shirtee_order->setTrackingCompany($post_data["tracking_carrier"]." - ".$post_data["tracking_title"]);
                 $shirtee_order->setTrackingNumber($post_data["tracking_number"]);
                 $shirtee_order->setTrackingDate($this->dateTime->gmtDate());
@@ -1477,7 +1481,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             }
 
             $shipmentItems = $this->getShipmentItems($data);
-            $shipment = $this->documentFactory->create(
+            $shipment = $this->shipmentDocument->create(
                 $order,
                 $shipmentItems,
                 $this->getTrackingArray($data)
@@ -1527,7 +1531,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function getTrackingArray(array $shipmentData)
     {
         $trackingCreation = [];
-        $trackCreation = $this->trackFactory->create();
+        $trackCreation = $this->shipmentTrackCreation->create();
         $trackCreation->setTrackNumber($shipmentData["tracking_number"]);
         $trackCreation->setTitle($shipmentData["tracking_title"]);
         $trackCreation->setCarrierCode($shipmentData["tracking_carrier"]);
@@ -1540,7 +1544,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $shipmentItems = [];
         $itemQty = isset($shipmentData['items']) ? $shipmentData['items'] : [];
         foreach ($itemQty as $itemId => $quantity) {
-            $item = $this->orderItemFactory->create();
+            $item = $this->shipmentItemCreation->create();
             $item->setOrderItemId($itemId);
             $item->setQty($quantity);
             $shipmentItems[] = $item;
@@ -1551,7 +1555,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function doCurlRequest($url, $params = [], $method = "POST")
     {
         try {
-            $client = $this->httpClientFactory->create();
+            $client = $this->httpClient->create();
             if ($method == "POST") {
                 $client->post($url, $params);
             } else {

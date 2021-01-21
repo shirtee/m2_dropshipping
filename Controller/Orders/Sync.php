@@ -11,11 +11,11 @@ class Sync extends \Shirtee\Dropshipping\Controller\Orders
     	try {
     		$this->shirteeHelper->cronSyncOrders();
 
-    		echo json_encode(["status" => "success"]);
-    		exit;
+            $response = $this->getResponse()->setBody(json_encode(["status" => "success"]));
+            return $response;
     	} catch (Exception $e) {
-    		echo json_encode(["status" => "error", "msg" => $e->getMessage()]);
-    		exit;
+            $response = $this->getResponse()->setBody(json_encode(["status" => "error", "msg" => $e->getMessage()]));
+            return $response;
     	}
     }
 }

@@ -15,14 +15,14 @@ class DoSettings extends \Shirtee\Dropshipping\Controller\Cloud
     		$data = ["type" => "ShirteeCloud_DoSettings", "ldata" => ["request" => $post_data, "response" => $result], "status" => 1, "error" => ""];
             $this->shirteeHelper->doDebug($data);
 
-            echo json_encode($result);
-    		exit;
+            $response = $this->getResponse()->setBody(json_encode($result));
+            return $response;
     	} catch (Exception $e) {
             $data = ["type" => "ShirteeCloud_DoSettings", "ldata" => ["request" => $post_data, "response" => "error"], "status" => 0, "error" => $e->getMessage()];
             $this->shirteeHelper->doDebug($data);
 
-    		echo json_encode(["status" => "error", "msg" => $e->getMessage()]);
-    		exit;
+            $response = $this->getResponse()->setBody(json_encode(["status" => "error", "msg" => $e->getMessage()]));
+            return $response;
     	}
     }
 }

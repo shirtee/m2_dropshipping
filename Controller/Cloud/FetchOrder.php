@@ -10,7 +10,7 @@ class FetchOrder extends \Shirtee\Dropshipping\Controller\Cloud
     {
     	try {
             $days = 3;
-            $post_data = $this->getRequest()->getPostValue();
+            $post_data = $this->getRequest()->getParams();
             if (isset($post_data["days"])) {
                 if ($post_data["days"] != "" && $post_data["days"] > 0) {
                     $days = $post_data["days"];
