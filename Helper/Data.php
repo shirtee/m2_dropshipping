@@ -554,6 +554,9 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             $meta_title = $this->processWebsiteMetaDetails($data["meta_title"]);
             $meta_description = $this->processWebsiteMetaDetails($data["meta_description"]);
 
+            //dropshipping cost without tax
+            $data["dropshipping_price"] = round(($data["dropshipping_price"] / 1.19), 2);
+
             if ($type == "create") {
                 $prd_configurable = $this->product->create();
             } elseif ($type == "update") {
@@ -1444,20 +1447,17 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                     return ["status" => "error", "msg" => "This order already fulfilled."];
                 }
 
-                $shirtee_order->setTrackingCompany($post_data["tracking_carrier"]." - ".$post_data["tracking_title"]);
-                $shirtee_order->setTrackingNumber($post_data["tracking_number"]);
-                $shirtee_order->setTrackingDate($this->dateTime->gmtDate());
-                $shirtee_order->setIsFulfilled(1);
-                $shirtee_order->save();
-
                 $order_items = [];
                 $odata = json_decode($shirtee_order->getData('odata'), true);
 
+                if (isset($odata["order_data"]["entity_id"])) {
+                    $order_id = $odata["order_data"]["entity_id"];
+                }
+
                 foreach ($odata["items_data"] as $sku => $idata) {
-                    if ($order_id == "") {
-                        $order_id = $idata["order_id"];
+                    if (isset($idata["qty_invoiced"]) && $idata["qty_invoiced"] > 0) {
+                        $order_items[$idata["item_id"]] = $idata["qty_invoiced"];
                     }
-                    $order_items[$idata["item_id"]] = $idata["qty_ordered"];
                 }
 
                 $data["items"] = $order_items;
@@ -1476,6 +1476,15 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 return ["status" => "error", "msg" => "Cannot do shipment for the order separately from invoice."];
             }
 
+            if (!$order->hasInvoices()) {
+                $mail_data = [
+                    "subject" => "Shirtee M2 :: Invoice Missing",
+                    "body_html" => "Params: ".implode(",", $post_data)
+                ];
+                $this->sendMail($mail_data);
+                return ["status" => "error", "msg" => "Please first create invoice."];
+            }
+
             if (!$order->canShip()) {
                 return ["status" => "error", "msg" => "Cannot do shipment for the order."];
             }
@@ -1490,6 +1499,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             if (!$shipment) {
                 return ["status" => "error", "msg" => "Unknown error"];
             }
+
+            $shirtee_order->setTrackingCompany($post_data["tracking_carrier"]." - ".$post_data["tracking_title"]);
+            $shirtee_order->setTrackingNumber($post_data["tracking_number"]);
+            $shirtee_order->setTrackingDate($this->dateTime->gmtDate());
+            $shirtee_order->setIsFulfilled(1);
+            $shirtee_order->save();
 
             if (!empty($data['comment_text'])) {
                 $shipment->addComment(
@@ -1980,14 +1995,18 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                             $_childrens = $prd_configurable->getTypeInstance()->getUsedProducts($prd_configurable);
                             foreach ($_childrens as $child) {
                                 $temp_sku = explode("__", $child->getSku());
-                                if (($rule_type == "add" || in_array($temp_sku[1], $size_Arr)) && in_array($temp_sku[2], $color_Arr)) {
+                                if (($rule_type == "add" || in_array($temp_sku[1], $size_Arr)) && (in_array($temp_sku[2], $color_Arr) || ($rule_type == "only_allow" && !in_array($temp_sku[2], $color_Arr)))) {
                                     //copy duplicate
                                     $duplicate = $child;
                                     //get sizes
                                     array_push($curr_Size, $temp_sku[1]);
 
+                                    if($rule_type == "only_allow" && in_array($temp_sku[2], $color_Arr)) {
+                                        continue;
+                                    }
+
                                     //for out of stock
-                                    if ($rule_type == "block") {
+                                    if ($rule_type == "block" || $rule_type == "only_allow") {
                                         $full_log["update_sku"][] = $child->getSku();
                                         $prd_simple = $this->productRepository->get($child->getSku(), false, 0);
                                         $prd_simple->setStockData(['manage_stock' => 1, 'is_in_stock' => 0, 'qty' => 0]);
@@ -2110,6 +2129,23 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             return ["status" => "success", "total" => $products_collection->count()];
         } else {
             return ["status" => "error", "msg" => "Something Wrong!"];
+        }
+    }
+
+    public function updateMagentoOrder($post_data)
+    {
+        $order_id = $post_data["order_id"];
+        $orders = $this->magentoOrderCollection->create()
+                       ->addAttributeToFilter('increment_id', ['eq' => $order_id])
+                       ->addAttributeToSelect("*");
+
+        if ($orders->getSize()) {
+            foreach ($orders as $_order) {
+                $shirtee_order_id = $this->magentoOrderPlaceAfter($_order);
+                return ["status" => "success"];
+            }
+        } else {
+            return ["status" => "error", "msg" => "Order not found."];
         }
     }
 }
