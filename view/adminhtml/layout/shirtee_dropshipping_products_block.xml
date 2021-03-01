@@ -47,18 +47,20 @@
                     </arguments>
                 </block>
                 <block class="Magento\Backend\Block\Widget\Grid\ColumnSet" name="adminhtml.shirtee.product.grid.columnSet" as="grid.columnSet">
-                    <block class="Magento\Backend\Block\Widget\Grid\Column" name="adminhtml.shirtee.product.grid.columnSet.website_id" as="website_id">
+                    <!-- <block class="Magento\Backend\Block\Widget\Grid\Column" name="adminhtml.shirtee.product.grid.columnSet.website_id" as="website_id">
                         <arguments>
                             <argument name="header" xsi:type="string" translate="true">Website</argument>
                             <argument name="index" xsi:type="string">website_id</argument>
                             <argument name="type" xsi:type="string">options</argument>
                             <argument name="options" xsi:type="options" model="Magento\Config\Model\Config\Source\Website\OptionHash"/>
                         </arguments>
-                    </block>
-                    <block class="Magento\Backend\Block\Widget\Grid\Column" name="adminhtml.shirtee.product.grid.columnSet.sku" as="sku">
+                    </block> -->
+                    <block class="Magento\Backend\Block\Widget\Grid\Column" name="adminhtml.shirtee.product.grid.columnSet.images" as="images">
                         <arguments>
-                            <argument name="header" xsi:type="string" translate="true">SKU</argument>
-                            <argument name="index" xsi:type="string">sku</argument>
+                            <argument name="header" xsi:type="string" translate="true"></argument>
+                            <argument name="index" xsi:type="string">images</argument>
+                            <argument name="renderer" xsi:type="string">Shirtee\Dropshipping\Block\Adminhtml\Product\Grid\Renderer\Image</argument>
+                            <argument name="filter" xsi:type="boolean">false</argument>
                         </arguments>
                     </block>
                     <block class="Magento\Backend\Block\Widget\Grid\Column" name="adminhtml.shirtee.product.grid.columnSet.category" as="category">
@@ -71,6 +73,19 @@
                         <arguments>
                             <argument name="header" xsi:type="string" translate="true">Name</argument>
                             <argument name="index" xsi:type="string">name</argument>
+                        </arguments>
+                    </block>
+                    <block class="Magento\Backend\Block\Widget\Grid\Column" name="adminhtml.shirtee.product.grid.columnSet.sku" as="sku">
+                        <arguments>
+                            <argument name="header" xsi:type="string" translate="true">SKU</argument>
+                            <argument name="index" xsi:type="string">sku</argument>
+                        </arguments>
+                    </block>
+                    <block class="Magento\Backend\Block\Widget\Grid\Column" name="adminhtml.shirtee.product.grid.columnSet.price" as="price">
+                        <arguments>
+                            <argument name="header" xsi:type="string" translate="true">Cost without Tax</argument>
+                            <argument name="index" xsi:type="string">pdata</argument>
+                            <argument name="renderer" xsi:type="string">Shirtee\Dropshipping\Block\Adminhtml\Product\Grid\Renderer\Price</argument>
                         </arguments>
                     </block>
                     <block class="Magento\Backend\Block\Widget\Grid\Column" name="adminhtml.shirtee.product.grid.columnSet.variations" as="variations">
