@@ -39,6 +39,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public $session;
     public $moduleList;
     public $linkManagement;
+    public $invoiceService;
 
     public $designer_id;
     public $cloud_id;
@@ -110,6 +111,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         \Magento\Backend\Model\Session $session,
         \Magento\Framework\Module\ModuleListInterface $moduleList,
         \Magento\ConfigurableProduct\Model\LinkManagement $linkManagement,
+        \Magento\Sales\Model\Service\InvoiceService $invoiceService,
         \Shirtee\Dropshipping\Model\ProductFactory $productFactory,
         \Shirtee\Dropshipping\Model\ResourceModel\Product\CollectionFactory $productCollectionFactory,
         \Shirtee\Dropshipping\Model\ProductRuleFactory $productRuleFactory,
@@ -164,6 +166,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $this->session = $session;
         $this->moduleList = $moduleList;
         $this->linkManagement = $linkManagement;
+        $this->invoiceService = $invoiceService;
 
         $this->productFactory = $productFactory;
         $this->productCollectionFactory = $productCollectionFactory;
@@ -1477,12 +1480,22 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             }
 
             if (!$order->hasInvoices()) {
-                $mail_data = [
-                    "subject" => "Shirtee M2 :: Invoice Missing",
-                    "body_html" => "Params: ".implode(",", $post_data)
-                ];
-                $this->sendMail($mail_data);
-                return ["status" => "error", "msg" => "Please first create invoice."];
+                $is_invoiced = $this->createInvoice($order, $odata);
+                if($is_invoiced["status"] == "success") {
+                    $data["items"] = $is_invoiced["items"];
+                    $mail_data = [
+                        "subject" => "Shirtee M2 :: Auto Invoice Created",
+                        "body_html" => "Params: ".implode(",", $post_data)
+                    ];
+                    $this->sendMail($mail_data);
+                } else {
+                    $mail_data = [
+                        "subject" => "Shirtee M2 :: Auto Invoice Failed",
+                        "body_html" => "Params: ".implode(",", $post_data)."<br/><br/>Error: ".$is_invoiced["msg"]
+                    ];
+                    $this->sendMail($mail_data);
+                    return $is_invoiced;
+                }
             }
 
             if (!$order->canShip()) {
@@ -1499,12 +1512,6 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             if (!$shipment) {
                 return ["status" => "error", "msg" => "Unknown error"];
             }
-
-            $shirtee_order->setTrackingCompany($post_data["tracking_carrier"]." - ".$post_data["tracking_title"]);
-            $shirtee_order->setTrackingNumber($post_data["tracking_number"]);
-            $shirtee_order->setTrackingDate($this->dateTime->gmtDate());
-            $shirtee_order->setIsFulfilled(1);
-            $shirtee_order->save();
 
             if (!empty($data['comment_text'])) {
                 $shipment->addComment(
@@ -1527,6 +1534,13 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             if (!empty($data['send_email'])) {
                 $this->shipmentSender->send($shipment);
             }
+
+            $shirtee_order->setTrackingCompany($post_data["tracking_carrier"]." - ".$post_data["tracking_title"]);
+            $shirtee_order->setTrackingNumber($post_data["tracking_number"]);
+            $shirtee_order->setTrackingDate($this->dateTime->gmtDate());
+            $shirtee_order->setOrderStatus("complete");
+            $shirtee_order->setIsFulfilled(1);
+            $shirtee_order->save();
             
             $this->setApiDetails($shirtee_order->getWebsiteId());
             $this->notifyShirteeCloud("magento_fulfill_order", $shirtee_order->getData());
@@ -1539,6 +1553,11 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
             return ["status" => "success"];
         } catch (Exception $e) {
+            $mail_data = [
+                "subject" => "Shirtee M2 :: Tracking Data Failed",
+                "body_html" => "Params: ".implode(",", $post_data)."<br/><br/>Error: ".$e->getMessage()
+            ];
+            $this->sendMail($mail_data);
             return ["status" => "error", "msg" => $e->getMessage()];
         }
     }
@@ -2146,6 +2165,36 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             }
         } else {
             return ["status" => "error", "msg" => "Order not found."];
+        }
+    }
+
+    public function createInvoice($order, $shirtee_order)
+    {
+        try {
+            if (!$order->canInvoice()) {
+                return ["status" => "error", "msg" => "The order does not allow an invoice to be created."];
+            }
+
+            $invoiceItems = [];
+            foreach ($shirtee_order["items_data"] as $sku => $idata) {
+                $invoiceItems[$idata["item_id"]] = $idata["qty_ordered"];
+            }
+
+            $invoice = $this->invoiceService->prepareInvoice($order, $invoiceItems);
+            if (!$invoice) {
+                return ["status" => "error", "msg" => "The invoice can't be saved at this time. Please try again later."];
+            }
+            if (!$invoice->getTotalQty()) {
+                return ["status" => "error", "msg" => "The invoice can't be created without products. Add products and try again."];
+            }
+            $invoice->addComment("The invoice has been created.", 0, 0);
+            $invoice->register();
+            $invoice->getOrder()->setIsInProcess(true);
+            $transactionSave = $this->dbTransaction->addObject($invoice)->addObject($invoice->getOrder());
+            $transactionSave->save();
+            return ["status" => "success", "items" => $invoiceItems];
+        } catch(Exception $e) {
+            return ["status" => "error", "msg" => $e->getMessage()];
         }
     }
 }
