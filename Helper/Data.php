@@ -1279,19 +1279,26 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
             $odata = ["order_data" => $order_data, "billing_data" => $billing_data, "shipping_data" => $shipping_data, "items_data" => $items_data, "other_items_data" => $other_items_data];
 
+            $order_status = $order->getStatus();
             $shirtee_status = "pending";
             $shirtee_order = $this->orderFactory->create()->load($order->getIncrementId(), 'magento_oid');
             if (!$shirtee_order->getId()) {
                 $shirtee_order_id = true;
             } else {
                 $shirtee_status = $shirtee_order->getShirteeStatus();
+                if ($shirtee_order->getIsFulfilled() == "1") {
+                    $order_status = "complete";
+                }
+                if ($shirtee_order->getIsFulfilled() == "2") {
+                    $order_status = "closed";
+                }
             }
             $shirtee_order->setMagentoOid($order->getIncrementId())
                           ->setOrderDate($this->dateTime->gmtTimestamp($order->getCreatedAt()))
                           ->setOrderEmail($order->getCustomerEmail())
                           ->setOrderTotal($order->getGrandTotal())
                           ->setOrderCurrency($order->getOrderCurrencyCode())
-                          ->setOrderStatus($order->getStatus())
+                          ->setOrderStatus($order_status)
                           ->setShirteeStatus($shirtee_status)
                           ->setIsPartial($is_partial)
                           ->setIsWarehouse($is_warehouse)
