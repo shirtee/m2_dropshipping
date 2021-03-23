@@ -1787,11 +1787,13 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $is_allowed = 1;
         $rule_type = "";
         $color_Arr = [];
+        $shop_exclude = [];
 
         $product_rule_collection = $this->productRuleCollectionFactory->create()->addFieldToFilter("sku", $sku)->addFieldToFilter("size", $size)->addFieldToSelect(["rule_type", "color", "color_ds"]);
         if ($product_rule_collection->count()) {
             foreach ($product_rule_collection as $product_rule) {
                 $rule_type = $product_rule->getRuleType();
+                $shop_exclude = explode(",", $product_rule->getShopExclude());
                 if ($this->is_dropshipping == "0") {
                     $color_Arr = explode(",", $product_rule->getColor());
                 } else {
@@ -1803,6 +1805,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             if ($product_rule_collection->count()) {
                 foreach ($product_rule_collection as $product_rule) {
                     $rule_type = $product_rule->getRuleType();
+                    $shop_exclude = explode(",", $product_rule->getShopExclude());
                     if ($this->is_dropshipping == "0") {
                         $color_Arr = explode(",", $product_rule->getColor());
                     } else {
@@ -1815,11 +1818,15 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         if ($rule_type != "" && count($color_Arr) > 0) {
             if ($rule_type == "not_in_array") {
                 if (!in_array($color, $color_Arr)) {
-                    $is_allowed = 0;
+                    if (!in_array($this->designer_id, $shop_exclude)) {
+                        $is_allowed = 0;
+                    }
                 }
             } elseif ($rule_type == "in_array") {
                 if (in_array($color, $color_Arr)) {
-                    $is_allowed = 0;
+                    if (!in_array($this->designer_id, $shop_exclude)) {
+                        $is_allowed = 0;
+                    }
                 }
             }
         }
@@ -1842,6 +1849,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                                  ->setSize($prdata["size"])
                                  ->setColor($prdata["color"])
                                  ->setColorDs($prdata["color_ds"])
+                                 ->setShopExclude($prdata["shop_exclude"])
                                  ->save();
                 }
             }
@@ -2193,6 +2201,9 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             }
             if (!$invoice->getTotalQty()) {
                 return ["status" => "error", "msg" => "The invoice can't be created without products. Add products and try again."];
+            }
+            if($invoice->canCapture()) {
+                $invoice->setRequestedCaptureCase("offline");
             }
             $invoice->addComment("The invoice has been created.", 0, 0);
             $invoice->register();
