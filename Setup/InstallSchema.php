@@ -357,6 +357,14 @@ class InstallSchema implements InstallSchemaInterface
                 ],
                 'Shirtee Designer ID Exclude'
             )->addColumn(
+                'shop_only',
+                Table::TYPE_TEXT,
+                null,
+                [
+                    'nullable' => true
+                ],
+                'Shirtee Designer ID Only'
+            )->addColumn(
                 'created_at',
                 Table::TYPE_TIMESTAMP,
                 null,

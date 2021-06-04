@@ -1788,8 +1788,9 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $rule_type = "";
         $color_Arr = [];
         $shop_exclude = [];
+        $shop_only = [];
 
-        $product_rule_collection = $this->productRuleCollectionFactory->create()->addFieldToFilter("sku", $sku)->addFieldToFilter("size", $size)->addFieldToSelect(["rule_type", "color", "color_ds"]);
+        $product_rule_collection = $this->productRuleCollectionFactory->create()->addFieldToFilter("sku", $sku)->addFieldToFilter("size", $size)->addFieldToSelect(["rule_type", "color", "color_ds", "shop_exclude", "shop_only"]);
         if ($product_rule_collection->count()) {
             foreach ($product_rule_collection as $product_rule) {
                 $rule_type = $product_rule->getRuleType();
@@ -1799,9 +1800,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 } else {
                     $color_Arr = explode(",", $product_rule->getColorDs());
                 }
+                if ($product_rule->getShopOnly() != "0") {
+                    $shop_only = explode(",", $product_rule->getShopOnly());
+                }
             }
         } else {
-            $product_rule_collection = $this->productRuleCollectionFactory->create()->addFieldToFilter("sku", $sku)->addFieldToFilter("size", ['null' => true])->addFieldToSelect(["rule_type", "color", "color_ds"]);
+            $product_rule_collection = $this->productRuleCollectionFactory->create()->addFieldToFilter("sku", $sku)->addFieldToFilter("size", ['null' => true])->addFieldToSelect(["rule_type", "color", "color_ds", "shop_exclude", "shop_only"]);
             if ($product_rule_collection->count()) {
                 foreach ($product_rule_collection as $product_rule) {
                     $rule_type = $product_rule->getRuleType();
@@ -1810,6 +1814,9 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                         $color_Arr = explode(",", $product_rule->getColor());
                     } else {
                         $color_Arr = explode(",", $product_rule->getColorDs());
+                    }
+                    if ($product_rule->getShopOnly() != "0") {
+                        $shop_only = explode(",", $product_rule->getShopOnly());
                     }
                 }
             }
@@ -1828,6 +1835,13 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                         $is_allowed = 0;
                     }
                 }
+            }
+        }
+
+        //check if rule is for specific designer
+        if ($is_allowed == "0" && count($shop_only) > 0) {
+            if (!in_array($this->designer_id, $shop_only)) {
+                $is_allowed = 1;
             }
         }
         return $is_allowed;
@@ -1850,6 +1864,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                                  ->setColor($prdata["color"])
                                  ->setColorDs($prdata["color_ds"])
                                  ->setShopExclude($prdata["shop_exclude"])
+                                 ->setShopOnly($prdata["shop_only"])
                                  ->save();
                 }
             }
