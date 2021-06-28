@@ -1257,7 +1257,11 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 $product = $this->product->create()->load($item->getProductId());
 
                 if ($product->getIsShirtee()) {
-                    $items_data[$item->getSku()] = $item->getData();
+                    $temp_item = $item->getData();
+                    if (!isset($temp_item["item_id"])) {
+                        $temp_item["item_id"] = $item->getItemId();
+                    }
+                    $items_data[$item->getSku()] = $temp_item;
                     if (strtoupper(substr($item->getSku(), 0, 4)) == "SWP_") {
                         $is_warehouse = 1;
                         $warehouse_items[] = $item->getSku();
