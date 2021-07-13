@@ -38,57 +38,69 @@ class InstallSchema implements InstallSchemaInterface
     {
         //Main product table
         $tableName = $installer->getTable(self::PRODUCT_TABLE);
-        $this->dropTableIfExists($installer, $tableName);
-        $this->createProductTable($installer, self::PRODUCT_TABLE);
+        if ($this->checkTableExists($installer, $tableName) == false) {
+            $this->createProductTable($installer, self::PRODUCT_TABLE);
+        }
 
         //Product rule table
         $tableName = $installer->getTable(self::PRODUCT_RULE_TABLE);
-        $this->dropTableIfExists($installer, $tableName);
-        $this->createProductRuleTable($installer, self::PRODUCT_RULE_TABLE);
+        if ($this->checkTableExists($installer, $tableName) == false) {
+            $this->createProductRuleTable($installer, self::PRODUCT_RULE_TABLE);
+        }
 
         //Cron product table
         $tableName = $installer->getTable(self::CRON_PRODUCT_TABLE);
-        $this->dropTableIfExists($installer, $tableName);
-        $this->createCronProductTable($installer, self::CRON_PRODUCT_TABLE);
+        if ($this->checkTableExists($installer, $tableName) == false) {
+            $this->createCronProductTable($installer, self::CRON_PRODUCT_TABLE);
+        }
 
         //Cron create product table
         $tableName = $installer->getTable(self::CRON_CREATE_PRODUCT_TABLE);
-        $this->dropTableIfExists($installer, $tableName);
-        $this->createCronCreateProductTable($installer, self::CRON_CREATE_PRODUCT_TABLE);
+        if ($this->checkTableExists($installer, $tableName) == false) {
+            $this->createCronCreateProductTable($installer, self::CRON_CREATE_PRODUCT_TABLE);
+        }
 
         //Cron modify product table
         $tableName = $installer->getTable(self::CRON_MODIFY_PRODUCT_TABLE);
-        $this->dropTableIfExists($installer, $tableName);
-        $this->createCronModifyProductTable($installer, self::CRON_MODIFY_PRODUCT_TABLE);
+        if ($this->checkTableExists($installer, $tableName) == false) {
+            $this->createCronModifyProductTable($installer, self::CRON_MODIFY_PRODUCT_TABLE);
+        }
 
         //Cron remove product table
         $tableName = $installer->getTable(self::CRON_REMOVE_PRODUCT_TABLE);
-        $this->dropTableIfExists($installer, $tableName);
-        $this->createCronRemoveProductTable($installer, self::CRON_REMOVE_PRODUCT_TABLE);
+        if ($this->checkTableExists($installer, $tableName) == false) {
+            $this->createCronRemoveProductTable($installer, self::CRON_REMOVE_PRODUCT_TABLE);
+        }
 
         //Cron product rule table
         $tableName = $installer->getTable(self::CRON_PRODUCT_RULE_TABLE);
-        $this->dropTableIfExists($installer, $tableName);
-        $this->createCronProductRuleTable($installer, self::CRON_PRODUCT_RULE_TABLE);
+        if ($this->checkTableExists($installer, $tableName) == false) {
+            $this->createCronProductRuleTable($installer, self::CRON_PRODUCT_RULE_TABLE);
+        }
 
         //Main order table
         $tableName = $installer->getTable(self::ORDER_TABLE);
-        $this->dropTableIfExists($installer, $tableName);
-        $this->createOrderTable($installer, self::ORDER_TABLE);
+        if ($this->checkTableExists($installer, $tableName) == false) {
+            $this->createOrderTable($installer, self::ORDER_TABLE);
+        }
 
         //Main log table
         $tableName = $installer->getTable(self::LOG_TABLE);
-        $this->dropTableIfExists($installer, $tableName);
-        $this->createLogTable($installer, self::LOG_TABLE);
+        if ($this->checkTableExists($installer, $tableName) == false) {
+            $this->createLogTable($installer, self::LOG_TABLE);
+        }
     }
 
-    private function dropTableIfExists($installer, $table)
+    private function checkTableExists($installer, $table)
     {
         $connection = $installer->getConnection();
         if ($connection->isTableExists($installer->getTable($table))) {
-            $connection->dropTable(
+            /*$connection->dropTable(
                 $installer->getTable($table)
-            );
+            );*/
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -143,6 +155,14 @@ class InstallSchema implements InstallSchemaInterface
                     'nullable' => true
                 ],
                 'Shirtee SKU'
+            )->addColumn(
+                'sku_custom',
+                Table::TYPE_TEXT,
+                255,
+                [
+                    'nullable' => true
+                ],
+                'Custom SKU'
             )->addColumn(
                 'name',
                 Table::TYPE_TEXT,
@@ -206,6 +226,16 @@ class InstallSchema implements InstallSchemaInterface
                 ],
                 'Is AllOverPrint Product?'
             )->addColumn(
+                'is_cloud_creator',
+                Table::TYPE_SMALLINT,
+                null,
+                [
+                    'unsigned' => true,
+                    'nullable' => true,
+                    'default' => 0
+                ],
+                'Is Cloud Creator Product?'
+            )->addColumn(
                 'is_customize',
                 Table::TYPE_SMALLINT,
                 null,
@@ -215,6 +245,16 @@ class InstallSchema implements InstallSchemaInterface
                     'default' => 0
                 ],
                 'Is Customize Product?'
+            )->addColumn(
+                'is_drop',
+                Table::TYPE_SMALLINT,
+                null,
+                [
+                    'unsigned' => true,
+                    'nullable' => true,
+                    'default' => 0
+                ],
+                'Is Drop Product?'
             )->addColumn(
                 'is_cron_create',
                 Table::TYPE_SMALLINT,

@@ -53,6 +53,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public $cid;
     public $lang;
     public $access_token;
+    public $product_status;
     public $product_update_exclude;
     public $is_product_custom_info;
     public $cron_limit = 1;
@@ -238,6 +239,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 $is_dropshipping = $this->scopeConfig->getValue('shirtee/settings/is_dropshipping');
                 $designer_id = $this->scopeConfig->getValue('shirtee/settings/designer_id');
                 $cloud_id = $this->scopeConfig->getValue('shirtee/settings/cloud_id');
+                $product_status = $this->scopeConfig->getValue('shirtee/settings/product_status');
                 $product_update_exclude = $this->scopeConfig->getValue('shirtee/settings/product_update_exclude');
                 $is_product_custom_info = $this->scopeConfig->getValue('shirtee/settings/is_product_custom_info');
 
@@ -247,6 +249,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 $this->is_dropshipping = $is_dropshipping;
                 $this->designer_id = $designer_id;
                 $this->cloud_id = $cloud_id;
+                $this->product_status = $product_status;
                 $this->product_update_exclude = $product_update_exclude;
                 $this->is_product_custom_info = $is_product_custom_info;
                 $this->website_name = $this->storeManager->getWebsite($this->website)->getName();
@@ -534,9 +537,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         return $data;
     }
 
-    public function createUpdateMagentoProduct($type, $cron_id, $product, $attributeSetId, $color_data, $size_data)
+    public function createUpdateMagentoProduct($type, $cron_id, $product)
     {
         try {
+            $attributeSetId = $this->getDefaultAttributeSetId();
+            $color_data = $this->getAttribute("shirtee_color");
+            $size_data = $this->getAttribute("shirtee_size");
             $product_update_exclude = explode(",", $this->product_update_exclude);
             $website_ids = [$product->getWebsiteId()];
             $data = json_decode($product->getPdata(), true);
@@ -562,6 +568,11 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
             if ($type == "create") {
                 $prd_configurable = $this->product->create();
+                if ($this->product_status == "active") {
+                    $prd_configurable->setStatus($this->productAttributeSourceStatus::STATUS_ENABLED);
+                } else {
+                    $prd_configurable->setStatus($this->productAttributeSourceStatus::STATUS_DISABLED);
+                }
             } elseif ($type == "update") {
                 $prd_configurable = $this->productRepository->get($data["sku"], false, 0);
                 if (!in_array("images", $product_update_exclude)) {
@@ -710,7 +721,6 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 ->setWeight($data["weight"])
                 ->setUrlKey($url_key)
                 ->setVisibility($this->productVisibility::VISIBILITY_BOTH)
-                ->setStatus($this->productAttributeSourceStatus::STATUS_ENABLED)
                 ->setStockData(['use_config_manage_stock' => 0, 'manage_stock' => 0, 'is_in_stock' => 1]);
 
             if ($type == "create") {
@@ -869,18 +879,11 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
             $products_collection = $this->productCollectionFactory->create()->addFieldToSelect(["pdata", "options", "images", "website_id"])->addFieldToFilter("pid", ["in", $pid_Arr])->addFieldToFilter("status", "0");
             if ($products_collection->count()) {
-                $attributeSetId = $this->getDefaultAttributeSetId();
-
-                //color
-                $color_data = $this->getAttribute("shirtee_color");
-                //size
-                $size_data = $this->getAttribute("shirtee_size");
-
                 foreach ($products_collection as $product) {
                     $cron_id = $sccpid_Arr[$product->getPid()];
                     $this->setApiDetails($product->getWebsiteId());
 
-                    $this->createUpdateMagentoProduct("create", $cron_id, $product, $attributeSetId, $color_data, $size_data);
+                    $this->createUpdateMagentoProduct("create", $cron_id, $product);
                 }
             }
 
@@ -956,13 +959,6 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
             $products_collection = $this->productCollectionFactory->create()->addFieldToSelect(["shirtee_pid", "website_id"])->addFieldToFilter("pid", ["in", $pid_Arr])->addFieldToFilter("status", "1");
             if ($products_collection->count()) {
-                $attributeSetId = $this->getDefaultAttributeSetId();
-
-                //color
-                $color_data = $this->getAttribute("shirtee_color");
-                //size
-                $size_data = $this->getAttribute("shirtee_size");
-
                 foreach ($products_collection as $product) {
                     $cron_id = $scmpid_Arr[$product->getPid()];
                     $this->setApiDetails($product->getWebsiteId());
@@ -970,7 +966,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                     $product = $this->updateProduct($product);
 
                     if ($product->getPid()) {
-                        $this->createUpdateMagentoProduct("update", $cron_id, $product, $attributeSetId, $color_data, $size_data);
+                        $this->createUpdateMagentoProduct("update", $cron_id, $product);
                     } else {
                         if (isset($product["status"]) && isset($product["msg"])) {
                             $scmp = $this->cronModifyProductFactory->create()->load($cron_id);
@@ -1673,6 +1669,10 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
         if (isset($post_data["password"])) {
             $this->configWriter->save("shirtee/settings/password", $post_data["password"], "default", 0);
+        }
+
+        if (isset($post_data["product_status"])) {
+            $this->configWriter->save("shirtee/settings/product_status", $post_data["product_status"], "default", 0);
         }
 
         if (isset($post_data["product_update_exclude"])) {
