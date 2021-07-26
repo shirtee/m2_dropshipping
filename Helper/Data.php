@@ -989,7 +989,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function cronSyncOrders()
     {
-        $sos_collection = $this->orderCollectionFactory->create()->addFieldToFilter("shirtee_status", "pending")->addFieldToFilter("order_status", "processing")->addFieldToSelect(["odata", "oid"])->setPageSize($this->cron_limit);
+        $sos_collection = $this->orderCollectionFactory->create()->addFieldToFilter("shirtee_status", "pending")->addFieldToFilter("order_status", "processing")->addFieldToSelect(["odata", "oid", "magento_oid"])->setPageSize($this->cron_limit);
         if ($sos_collection->count()) {
             foreach ($sos_collection as $order) {
                 $shirtee_order = $this->orderFactory->create()->load($order->getOid());
@@ -1008,6 +1008,8 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                             $shirtee_order->save();
 
                             $this->notifyShirteeCloud("magento_sync_order", $shirtee_order->getData());
+                            $post_data = ["order_id" => $order->getMagentoOid()];
+                            $this->updateMagentoOrder($post_data);
                         }
                     } else {
                         if (isset($result["msg"])) {
