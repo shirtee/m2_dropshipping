@@ -1799,30 +1799,36 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $product_rule_collection = $this->productRuleCollectionFactory->create()->addFieldToFilter("sku", $sku)->addFieldToFilter("size", $size)->addFieldToSelect(["rule_type", "color", "color_ds", "shop_exclude", "shop_only"]);
         if ($product_rule_collection->count()) {
             foreach ($product_rule_collection as $product_rule) {
-                $rule_type = $product_rule->getRuleType();
-                $shop_exclude = explode(",", $product_rule->getShopExclude());
                 if ($this->is_dropshipping == "0") {
                     $color_Arr = explode(",", $product_rule->getColor());
                 } else {
                     $color_Arr = explode(",", $product_rule->getColorDs());
                 }
-                if ($product_rule->getShopOnly() != "0") {
-                    $shop_only = explode(",", $product_rule->getShopOnly());
+                if(in_array($color, $color_Arr) || $product_rule_collection->count() == 1) {
+                    $rule_type = $product_rule->getRuleType();
+                    $shop_exclude = explode(",", $product_rule->getShopExclude());
+                    if ($product_rule->getShopOnly() != "0") {
+                        $shop_only = explode(",", $product_rule->getShopOnly());
+                    }
+                    break;
                 }
             }
         } else {
             $product_rule_collection = $this->productRuleCollectionFactory->create()->addFieldToFilter("sku", $sku)->addFieldToFilter("size", ['null' => true])->addFieldToSelect(["rule_type", "color", "color_ds", "shop_exclude", "shop_only"]);
             if ($product_rule_collection->count()) {
                 foreach ($product_rule_collection as $product_rule) {
-                    $rule_type = $product_rule->getRuleType();
-                    $shop_exclude = explode(",", $product_rule->getShopExclude());
                     if ($this->is_dropshipping == "0") {
                         $color_Arr = explode(",", $product_rule->getColor());
                     } else {
                         $color_Arr = explode(",", $product_rule->getColorDs());
                     }
-                    if ($product_rule->getShopOnly() != "0") {
-                        $shop_only = explode(",", $product_rule->getShopOnly());
+                    if(in_array($color, $color_Arr) || $product_rule_collection->count() == 1) {
+                        $rule_type = $product_rule->getRuleType();
+                        $shop_exclude = explode(",", $product_rule->getShopExclude());
+                        if ($product_rule->getShopOnly() != "0") {
+                            $shop_only = explode(",", $product_rule->getShopOnly());
+                        }
+                        break;
                     }
                 }
             }
