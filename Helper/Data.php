@@ -1804,7 +1804,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 } else {
                     $color_Arr = explode(",", $product_rule->getColorDs());
                 }
-                if(in_array($color, $color_Arr) || $product_rule_collection->count() == 1) {
+                if(in_array($color, $color_Arr) || $product_rule->getRuleType() == "not_in_array") {
                     $rule_type = $product_rule->getRuleType();
                     $shop_exclude = explode(",", $product_rule->getShopExclude());
                     if ($product_rule->getShopOnly() != "0") {
@@ -1813,7 +1813,8 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                     break;
                 }
             }
-        } else {
+        }
+        if ($rule_type == "") {
             $product_rule_collection = $this->productRuleCollectionFactory->create()->addFieldToFilter("sku", $sku)->addFieldToFilter("size", ['null' => true])->addFieldToSelect(["rule_type", "color", "color_ds", "shop_exclude", "shop_only"]);
             if ($product_rule_collection->count()) {
                 foreach ($product_rule_collection as $product_rule) {
@@ -1822,7 +1823,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                     } else {
                         $color_Arr = explode(",", $product_rule->getColorDs());
                     }
-                    if(in_array($color, $color_Arr) || $product_rule_collection->count() == 1) {
+                    if(in_array($color, $color_Arr) || $product_rule->getRuleType() == "not_in_array") {
                         $rule_type = $product_rule->getRuleType();
                         $shop_exclude = explode(",", $product_rule->getShopExclude());
                         if ($product_rule->getShopOnly() != "0") {
