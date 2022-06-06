@@ -1251,7 +1251,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $warehouse_items = [];
 
         foreach ($order->getAllItems() as $item) {
-            if ($item->getParentItemId() == null) {
+            if ($item->getProductType() == "configurable" || ($item->getParentItemId() == null && $item->getProductType() == "simple")) {
                 $product = $this->product->create()->load($item->getProductId());
 
                 if ($product->getIsShirtee()) {
